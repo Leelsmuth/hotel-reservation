@@ -85,7 +85,7 @@ const MakeReservation = () => {
 
     try {
       const response = await fetch('/api/rooms/reserve', {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },

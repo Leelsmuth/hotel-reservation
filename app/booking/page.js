@@ -47,7 +47,7 @@ const Booking = () => {
 
     try {
       const response = await fetch('/api/rooms/booking', {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -60,6 +60,8 @@ const Booking = () => {
 
       const data = await response.json();
       console.log('Reservation updated successfully:', data);
+
+      router.replace(`/booking/confirmation?rCode=${data.bookingId}`);
     } catch (error) {
       console.error('Error:', error);
     }
