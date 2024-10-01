@@ -1,9 +1,18 @@
+'use client';
+
 import CustomDateRangePicker from '@/components/forms/CustomDateRangePicker';
 import Container from '@/components/layout/Container';
 import StyledLink from '@/components/ui/StyledLink';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
+
+  const fetchAvailableRooms = () => {
+    router.push('/make-reservation');
+  };
+
   return (
     <Container classes="font-[family-name:var(--font-geist-sans)]">
       <Image
@@ -15,7 +24,7 @@ export default function Home() {
         priority
       />
       <div className="my-5">
-        <CustomDateRangePicker />
+        <CustomDateRangePicker fetchAvailableRooms={fetchAvailableRooms} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 mt-9 gap-10">
         <div className="md:max-w-md">
