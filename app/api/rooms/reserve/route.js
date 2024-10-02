@@ -99,6 +99,7 @@ export async function POST(request) {
     return NextResponse.json({
       message: 'Reservation created successfully, and room updated',
       bookingId: reservationDetails.bookingId,
+      reservationId: reservationRef.id,
     });
   } catch (error) {
     console.error('Transaction failed:', error);

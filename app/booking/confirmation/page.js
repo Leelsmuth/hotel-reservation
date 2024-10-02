@@ -1,6 +1,5 @@
 'use client';
 
-import StyledButton from '@/components/ui/StyledButton';
 import StyledLink from '@/components/ui/StyledLink';
 import { useSearchParams } from 'next/navigation';
 
@@ -9,10 +8,10 @@ const BookingConfirmation = () => {
   const [reservationCode, setReservationCode] = useState('');
 
   useEffect(() => {
-    const rCode = searchParams.get('rCode');
+    const bId = searchParams.get('bId');
 
-    if (rCode) {
-      setReservationCode(rCode);
+    if (bId) {
+      setReservationCode(bId);
     }
   }, [searchParams]);
   return (
@@ -25,10 +24,6 @@ const BookingConfirmation = () => {
       </p>
       <div className="flex gap-6">
         <StyledLink linkText="Return to Homepage" path="/" />
-        <StyledButton
-          btnText="Proceed to Booking"
-          clickHandler={bookingHandler}
-        />
       </div>
     </div>
   );

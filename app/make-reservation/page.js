@@ -101,7 +101,7 @@ const MakeReservation = () => {
       resetBookingDetails();
       setShowingSection(1);
       router.push(
-        `/make-reservation/confirmation?rCode=${data.bookingId}&bId=${data.reservationId}`
+        `/make-reservation/confirmation?resId=${data.reservationId}&bId=${data.bookingId}`
       );
       console.log('Reservation successful:', data);
     } catch (error) {

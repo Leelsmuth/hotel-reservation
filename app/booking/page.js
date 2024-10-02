@@ -61,19 +61,19 @@ const Booking = () => {
       const data = await response.json();
       console.log('Reservation updated successfully:', data);
 
-      router.replace(`/booking/confirmation?rCode=${data.bookingId}`);
+      router.replace(`/booking/confirmation?bId=${data.bookingId}`);
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
   useEffect(() => {
-    const rCode = searchParams.get('rCode');
+    const resId = searchParams.get('resId');
     const bId = searchParams.get('bId');
 
-    if (rCode) {
-      setReservationId(rCode);
-      fetchReservation(rCode);
+    if (resId) {
+      setReservationId(resId);
+      fetchReservation(resId);
     }
     if (bId) {
       setBookingId(bId);

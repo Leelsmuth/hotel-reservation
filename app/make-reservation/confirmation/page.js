@@ -7,21 +7,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 const ReservationConfirmation = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [reservationCode, setReservationCode] = useState('');
+  const [reservationId, setReservationId] = useState('');
   const [bookingId, setBookingId] = useState('');
 
   const bookingHandler = () => {
-    router.replace(
-      `/booking?rCode=${data.bookingId}&bId=${data.reservationId}`
-    );
+    router.replace(`/booking?resId=${reservationId}&bId=${bookingId}`);
   };
 
   useEffect(() => {
-    const rCode = searchParams.get('rCode');
+    const resId = searchParams.get('resId');
     const bId = searchParams.get('bId');
 
-    if (rCode) {
-      setReservationCode(rCode);
+    if (resId) {
+      setReservationId(resId);
     }
     if (bId) {
       setBookingId(bId);
@@ -32,8 +30,8 @@ const ReservationConfirmation = () => {
       <h1>Reservation Successful!</h1>
       <p>
         A confirmation email will be sent to you shortly your Reservation ID:{' '}
-        {reservationCode} . Please note that your reservation will be only held
-        for an hour and will be lost if not booked before then.
+        {bookingId} . Please note that your reservation will be only held for an
+        hour and will be lost if not booked before then.
       </p>
       <div className="flex gap-6">
         <StyledLink linkText="Return to Homepage" path="/" />
