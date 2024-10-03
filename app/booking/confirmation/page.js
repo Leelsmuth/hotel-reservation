@@ -2,6 +2,7 @@
 
 import StyledLink from '@/components/ui/StyledLink';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const BookingConfirmation = () => {
   const searchParams = useSearchParams();

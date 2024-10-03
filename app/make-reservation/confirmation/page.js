@@ -3,6 +3,7 @@
 import StyledButton from '@/components/ui/StyledButton';
 import StyledLink from '@/components/ui/StyledLink';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const ReservationConfirmation = () => {
   const router = useRouter();

@@ -16,22 +16,20 @@ export const BookingProvider = ({ children }) => {
     roomTypeId: '',
     roomId: '',
     guestCount: 1,
-    guestDetails: [], //[{name, age}]
+    guestDetails: [],
     roomPrice: 0,
     tax: 0,
     subtotal: 0,
     totalPrice: 0,
-    paymentDetails: null, //{paymentMode, currency, paymentStatus, paidAmount}
+    paymentDetails: null,
     isGuest: true,
-    bookingStatus: 'reserved', //reserved,booked,cancelled
+    bookingStatus: 'reserved',
     userId: null,
     contactDetails: { fullName: '', email: '', phone: '' },
   });
 
-  // Tax percentage (fixed at 13%)
   const TAX_PERCENTAGE = 13;
 
-  // Function to automatically update room price, tax, and total price
   const updateRoomPrice = (roomPrice) => {
     const roundToTwoDecimals = (num) => Math.round(num * 100) / 100;
 
@@ -56,7 +54,6 @@ export const BookingProvider = ({ children }) => {
     }));
   };
 
-  // Other individual update functions
   const updateDates = (checkInDate, checkOutDate) => {
     const numOfNights = differenceInCalendarDays(checkOutDate, checkInDate);
     let applicableDiscount = 0;
@@ -142,7 +139,6 @@ export const BookingProvider = ({ children }) => {
     }));
   };
 
-  // General update function for multiple fields at once
   const updateBooking = (newDetails) => {
     setBookingDetails((prevDetails) => ({
       ...prevDetails,

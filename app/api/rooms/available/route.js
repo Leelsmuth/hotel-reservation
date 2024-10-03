@@ -1,4 +1,5 @@
 import { db } from '@/lib/firebase/firebase';
+import { isRoomAvailableForDateRange } from '@/lib/helpers/isRoomAvailableForDateRange';
 import { ROOM_TYPES_IDS } from '@/lib/static/roomLegend';
 import { collection, getDocs, limit, query, where } from 'firebase/firestore';
 import { NextResponse } from 'next/server';
@@ -12,26 +13,6 @@ export async function GET(request) {
     const desiredEndDate = new Date(url.searchParams.get('endDate'));
 
     const results = {};
-
-    // Helper function to check if the given date range is available
-    const isRoomAvailableForDateRange = (bookings, startDate, endDate) => {
-      if (!bookings || bookings.length === 0) return true;
-
-      for (const booking of bookings) {
-        const bookedFrom = new Date(booking.bookedFrom);
-        const bookedUntil = new Date(booking.bookedUntil);
-
-        // Check if the desired date range overlaps with an existing booking
-        if (
-          (startDate <= bookedUntil && startDate >= bookedFrom) || // Overlaps start
-          (endDate >= bookedFrom && endDate <= bookedUntil) || // Overlaps end
-          (startDate <= bookedFrom && endDate >= bookedUntil) // Encompasses existing booking
-        ) {
-          return false;
-        }
-      }
-      return true;
-    };
 
     for (const type of roomTypes) {
       const availableRoomQuery = query(

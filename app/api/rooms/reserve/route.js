@@ -2,14 +2,12 @@ import { db } from '@/lib/firebase/firebase';
 import { isDateOverlap } from '@/lib/helpers/isDateOverlap';
 import { ROOM_STATUS } from '@/lib/static/roomLegend';
 import {
-  addDoc,
   arrayUnion,
   collection,
   doc,
   getDocs,
   query,
   runTransaction,
-  updateDoc,
   where,
 } from 'firebase/firestore';
 import { NextResponse } from 'next/server';
@@ -66,6 +64,8 @@ export async function POST(request) {
     const { bookingDates, updatePathId, ...reservationDetails } =
       bookingDetails;
 
+    let reservationRefId = '';
+
     await runTransaction(db, async (transaction) => {
       const reservationRef = doc(collection(db, 'reservations'));
 
@@ -94,12 +94,14 @@ export async function POST(request) {
         status: ROOM_STATUS.BOOKED,
         bookings: arrayUnion(bookingDates),
       });
+
+      reservationRefId = reservationRef.id;
     });
 
     return NextResponse.json({
       message: 'Reservation created successfully, and room updated',
       bookingId: reservationDetails.bookingId,
-      reservationId: reservationRef.id,
+      reservationId: reservationRefId,
     });
   } catch (error) {
     console.error('Transaction failed:', error);

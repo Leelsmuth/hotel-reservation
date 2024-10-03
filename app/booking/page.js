@@ -1,7 +1,10 @@
 'use client';
 
+import Spinner from '@/components/anim/Spinner';
 import PayPalButton from '@/components/payment/PayPalButton';
+import { RESERVATION_STATUS } from '@/lib/static/roomLegend';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Fragment, useEffect, useState } from 'react';
 
 const Booking = () => {
   const router = useRouter();
@@ -32,18 +35,11 @@ const Booking = () => {
     }
   };
 
-  const handlePaymentSuccess = (details) => {
-    console.log('Transaction completed by ' + details.payer.name.given_name);
-    alert('Payment successful! Transaction ID: ' + details.id);
-  };
-
-  const handlePaymentError = (error) => {
-    console.error('Payment failed: ', error);
-    alert('Payment failed. Please try again.');
-  };
-
-  const completeBooking = async () => {
-    const updates = {};
+  const completeBooking = async (paymentDetails) => {
+    const updates = {
+      paymentDetails,
+      bookingStatus: RESERVATION_STATUS.BOOKED,
+    };
 
     try {
       const response = await fetch('/api/rooms/booking', {
@@ -59,12 +55,31 @@ const Booking = () => {
       }
 
       const data = await response.json();
-      console.log('Reservation updated successfully:', data);
 
       router.replace(`/booking/confirmation?bId=${data.bookingId}`);
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const handlePaymentSuccess = (details) => {
+    const paymentDetails = {
+      paymentMode: 'PAYPAL',
+      paymentId: details.id,
+      currency: details.purchase_units[0].amount.currency_code,
+      amountPaid: details.purchase_units[0].amount.value,
+      paymentStatus: details.status,
+      payInitiated: details.create_time,
+      paidOn: details.update_time,
+      payerDetails: details.payer,
+    };
+
+    completeBooking(paymentDetails);
+  };
+
+  const handlePaymentError = (error) => {
+    console.error('Payment failed: ', error);
+    alert('Payment failed. Please try again.');
   };
 
   useEffect(() => {
@@ -81,15 +96,27 @@ const Booking = () => {
   }, [searchParams]);
 
   return (
-    <div>
-      <h1>Checkout</h1>
-      <div>Total Price: $ {bookingDetails.totalPrice}</div>
-      <PayPalButton
-        amount={bookingDetails.totalPrice}
-        onSuccess={handlePaymentSuccess}
-        onError={handlePaymentError}
-      />
-    </div>
+    <Fragment>
+      {loading ? (
+        <div className="min-h-screen text-center max-w-screen-lg mx-auto">
+          <Spinner
+            spinnerColor="text-primary"
+            spinnerHeight="h-1/5"
+            spinnerWidth="w-1/5"
+          />
+        </div>
+      ) : (
+        <div>
+          <h1>Checkout</h1>
+          <div>Total Price: $ {bookingDetails?.totalPrice}</div>
+          <PayPalButton
+            amount={bookingDetails?.totalPrice}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+          />
+        </div>
+      )}
+    </Fragment>
   );
 };
 

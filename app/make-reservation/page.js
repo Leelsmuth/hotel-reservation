@@ -10,6 +10,7 @@ import generateReservationCode from '@/lib/helpers/generateReservationCode';
 import { ROOM_TYPES_IDS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Spinner from '@/components/anim/Spinner';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -33,13 +34,13 @@ const MakeReservation = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isFetchingRooms, setIsFetchingRooms] = useState(true);
   const [guestNameOne, setGuestNameOne] = useState('');
-  const [guestAgeOne, setGuestAgeOne] = useState(1);
+  const [guestAgeOne, setGuestAgeOne] = useState('');
   const [guestNameTwo, setGuestNameTwo] = useState('');
-  const [guestAgeTwo, setGuestAgeTwo] = useState(1);
+  const [guestAgeTwo, setGuestAgeTwo] = useState('');
   const [guestNameThree, setGuestNameThree] = useState('');
-  const [guestAgeThree, setGuestAgeThree] = useState(1);
+  const [guestAgeThree, setGuestAgeThree] = useState('');
   const [guestNameFour, setGuestNameFour] = useState('');
-  const [guestAgeFour, setGuestAgeFour] = useState(1);
+  const [guestAgeFour, setGuestAgeFour] = useState('');
 
   const contactName = useRef(null);
   const contactPhone = useRef(null);
@@ -72,8 +73,8 @@ const MakeReservation = () => {
       ...bookingDetails,
       bookingId: generateReservationCode(),
       bookingDates: {
-        bookedFom: bookingDetails.checkInDate,
-        bookedUntil: bookingDetails.checkOutDate,
+        bookedFrom: format(bookingDetails.checkInDate, 'yyyy-MM-dd'),
+        bookedUntil: format(bookingDetails.checkOutDate, 'yyyy-MM-dd'),
       },
       updatePathId: selectedRoom.pathId,
       contactDetails: contactDetails,
@@ -98,12 +99,11 @@ const MakeReservation = () => {
 
       const data = await response.json();
       setReservationData(data);
-      resetBookingDetails();
       setShowingSection(1);
       router.push(
         `/make-reservation/confirmation?resId=${data.reservationId}&bId=${data.bookingId}`
       );
-      console.log('Reservation successful:', data);
+      resetBookingDetails();
     } catch (error) {
       setError(error.message);
       console.error('Error during reservation:', error);
@@ -112,11 +112,16 @@ const MakeReservation = () => {
     }
   };
 
-  const fetchAvailableRooms = async () => {
+  const fetchAvailableRooms = async (checkInDate, checkOutDate) => {
     setIsFetchingRooms(true);
+    const bookedFrom = format(checkInDate, 'yyyy-MM-dd');
+    const bookedUntil = format(checkOutDate, 'yyyy-MM-dd');
 
     try {
-      const res = await fetch('/api/rooms/available', { method: 'GET' });
+      const res = await fetch(
+        `/api/rooms/available?startDate=${bookedFrom}&endDate=${bookedUntil}`,
+        { method: 'GET' }
+      );
 
       if (!res.ok) {
         throw new Error(`Error fetching rooms: ${res.statusText}`);
@@ -152,7 +157,9 @@ const MakeReservation = () => {
         {showingSection === 1 && (
           <Fragment>
             <div className="my-5">
-              <CustomDateRangePicker />
+              <CustomDateRangePicker
+                fetchAvailableRooms={fetchAvailableRooms}
+              />
             </div>
             {!isFetchingRooms ? (
               <div>

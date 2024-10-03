@@ -1,17 +1,17 @@
 'use client';
 
 import Spinner from '@/components/anim/Spinner';
+import Container from '@/components/layout/Container';
 import StyledButton from '@/components/ui/StyledButton';
 import { RESERVATION_STATUS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
 import { useRouter } from 'next/navigation';
-import { Fragment, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 const ManageReservation = () => {
   const router = useRouter();
 
-  const [isFetching, setIsFetching] = useState(true);
+  const [isFetching, setIsFetching] = useState(null);
   const [reservationDetails, setReservationDetails] = useState(null);
-  const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -20,6 +20,7 @@ const ManageReservation = () => {
 
   const getReservationDetails = async () => {
     try {
+      setIsFetching(true);
       const response = await fetch(
         `/api/rooms/reserve?bookingId=${bookingId.current.value.trim()}&email=${email.current.value.trim()}`,
         {
@@ -32,9 +33,8 @@ const ManageReservation = () => {
       }
 
       const data = await response.json();
-      setReservationDetails(data);
+      setReservationDetails(data.reservation);
       setIsFetching(false);
-      console.log('Reservation Details:', data);
     } catch (error) {
       console.error('Failed to fetch reservation:', error);
       setIsFetching(false);
@@ -43,26 +43,25 @@ const ManageReservation = () => {
 
   const bookingHandler = () => {
     router.push(
-      `/booking?resId=${reservationDetails.bookingId}&bId=${reservationDetails.reservationId}`
+      `/booking?resId=${reservationDetails.id}&bId=${reservationDetails.bookingId}`
     );
   };
 
   const cancelReservation = async () => {
     setLoading(true);
-    setMessage(null);
     setError(null);
 
     try {
-      const response = await fetch('/api/reservation/cancel', {
+      const response = await fetch('/api/rooms/cancel-reservation', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           reservationId: reservationDetails.id,
-          roomId: parseInt(roomId, 10), // Convert roomId to number if it's in string format
-          bookedFrom: reservationDetails.checkInDate,
-          bookedUntil: reservationDetails.checkOutDate,
+          roomId: reservationDetails.roomId,
+          bookedFrom: reservationDetails.bookingDates.bookedFrom,
+          bookedUntil: reservationDetails.bookingDates.bookedUntil,
         }),
       });
 
@@ -71,7 +70,8 @@ const ManageReservation = () => {
       }
 
       const data = await response.json();
-      setMessage(data.message);
+      alert(data.message);
+      router.push('/');
     } catch (error) {
       setError(error.message);
     } finally {
@@ -80,35 +80,52 @@ const ManageReservation = () => {
   };
 
   return (
-    <Fragment>
+    <Container>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
           <label className="block">Booking/Reference ID</label>
-          <input type="text" ref={bookingId} />
+          <input className="border w-full" type="text" ref={bookingId} />
         </div>
         <div>
           <label className="block">Email</label>
-          <input type="email" ref={email} />
+          <input className="border w-full" type="email" ref={email} />
         </div>
+      </div>
+      <div className="mx-auto w-max">
         <StyledButton btnText="Search" clickHandler={getReservationDetails} />
       </div>
-      {isFetching ? (
-        <div className="min-h-screen pb-5 md:pb-10 lg:pb-20 px-5 md:px-10 lg:px-28 font-[family-name:var(--font-manrope)] max-w-screen-lg mx-auto">
-          {/* <div className="text-2xl font-medium">Loading...</div> */}
+      {isFetching === true && (
+        <div className="min-h-screen text-center max-w-screen-lg mx-auto">
           <Spinner
             spinnerColor="text-primary"
             spinnerHeight="h-1/5"
             spinnerWidth="w-1/5"
           />
         </div>
-      ) : (
+      )}
+      {isFetching === false && !reservationDetails && <div>{error}</div>}
+      {isFetching === false && reservationDetails && (
         <div>
           <h1>{ROOM_TYPES_NAMES[reservationDetails.roomTypeId]}</h1>
           <div>${reservationDetails.roomPrice}/night</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"></div>
-          <div className="mb-4"></div>
-          {reservationDetails.guestDetails.map((detail, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
+              Check In
+              <br /> {reservationDetails.bookingDates.bookedFrom}
+            </div>
+            <div>
+              Check Out
+              <br /> {reservationDetails.bookingDates.bookedUntil}
+            </div>
+          </div>
+          <div className="mb-4">
+            <div>
+              No. of Occupants
+              <br /> {reservationDetails.guestCount}
+            </div>
+          </div>
+          {reservationDetails.guestDetails.map((detail, idx) => (
+            <div key={idx}>
               <div> Occupant {idx + 1}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -141,7 +158,16 @@ const ManageReservation = () => {
             RESERVATION_STATUS.CANCELLED && <div>Cancelled</div>}
         </div>
       )}
-    </Fragment>
+      {loading && (
+        <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
+          <Spinner
+            spinnerColor="text-primary"
+            spinnerHeight="h-1/5"
+            spinnerWidth="w-1/5"
+          />
+        </div>
+      )}
+    </Container>
   );
 };
 

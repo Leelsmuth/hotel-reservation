@@ -9,7 +9,7 @@ import addDays from 'date-fns/addDays';
 import { useBooking } from '@/context/BookingContext';
 import StyledButton from '../ui/StyledButton';
 
-export default function CustomDateRangePicker({ fetchAvailableRooms }) {
+const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
   const { bookingDetails, updateGuestCount, updateDates } = useBooking();
   const today = new Date();
   const defaultEndDate = addDays(today, 1);
@@ -25,10 +25,17 @@ export default function CustomDateRangePicker({ fetchAvailableRooms }) {
   const [guestCount, setGuestCount] = useState(1);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  useEffect(() => {
+  const updateParams = () => {
     updateDates(dateRange[0].startDate, dateRange[0].endDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange[0].endDate, dateRange[0].startDate]);
+    setTimeout(() => {
+      fetchAvailableRooms(dateRange[0].startDate, dateRange[0].endDate);
+    }, 300);
+  };
+
+  // useEffect(() => {
+  //   updateDates(dateRange[0].startDate, dateRange[0].endDate);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [dateRange[0].endDate, dateRange[0].startDate]);
 
   useEffect(() => {
     if (bookingDetails.checkInDate || bookingDetails.checkOutDate) {
@@ -89,10 +96,7 @@ export default function CustomDateRangePicker({ fetchAvailableRooms }) {
           }}
         />
       </div>
-      <StyledButton
-        btnText="Check Availability"
-        clickHandler={fetchAvailableRooms}
-      />
+      <StyledButton btnText="Check Availability" clickHandler={updateParams} />
 
       {/* Date Range Picker - Toggle Visibility */}
       {showDatePicker && (
@@ -109,4 +113,6 @@ export default function CustomDateRangePicker({ fetchAvailableRooms }) {
       )}
     </div>
   );
-}
+};
+
+export default CustomDateRangePicker;

@@ -6,7 +6,7 @@ import StyledLink from '@/components/ui/StyledLink';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-export default function Home() {
+const Home = () => {
   const router = useRouter();
 
   const fetchAvailableRooms = () => {
@@ -57,4 +57,6 @@ export default function Home() {
       </div>
     </Container>
   );
-}
+};
+
+export default Home;
