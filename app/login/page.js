@@ -6,7 +6,7 @@ import StyledButton from '@/components/ui/StyledButton';
 import { useAuth } from '@/context/AuthProvider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const Login = () => {
   const router = useRouter();
@@ -28,6 +28,12 @@ const Login = () => {
       setError(err.message || 'Something went wrong. Please try again.');
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
 
   return (
     <Container>
