@@ -1,5 +1,12 @@
+import RoomDetails from '@/components/layout/RoomDetails';
+import { Fragment } from 'react';
+
 const DeluxeRoom = () => {
-  return <div>DeluxeRoom</div>;
+  return (
+    <Fragment>
+      <RoomDetails name="deluxe" />
+    </Fragment>
+  );
 };
 
 export default DeluxeRoom;

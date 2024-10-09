@@ -145,10 +145,15 @@ const MakeReservation = () => {
       updateRoomPrice(selectedRoom.price);
       updateRoomSelection(selectedRoom.typeId, selectedRoom.pathId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoom]);
 
   useEffect(() => {
-    fetchAvailableRooms();
+    fetchAvailableRooms(
+      bookingDetails.checkInDate,
+      bookingDetails.checkOutDate
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

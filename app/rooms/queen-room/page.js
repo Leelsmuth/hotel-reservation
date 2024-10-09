@@ -1,5 +1,12 @@
+import RoomDetails from '@/components/layout/RoomDetails';
+import { Fragment } from 'react';
+
 const QueenRoom = () => {
-  return <div>QueenRoom</div>;
+  return (
+    <Fragment>
+      <RoomDetails name="queen" />
+    </Fragment>
+  );
 };
 
 export default QueenRoom;
