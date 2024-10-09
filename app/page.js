@@ -1,10 +1,12 @@
 'use client';
 
+import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import CustomDateRangePicker from '@/components/forms/CustomDateRangePicker';
 import Container from '@/components/layout/Container';
 import StyledLink from '@/components/ui/StyledLink';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Fragment } from 'react';
 
 const Home = () => {
   const router = useRouter();
@@ -14,48 +16,74 @@ const Home = () => {
   };
 
   return (
-    <Container classes="font-[family-name:var(--font-geist-sans)]">
-      <Image
-        className="w-full object-contain h-auto rounded-3xl"
-        src="/banner.jpg"
-        alt="Banner"
-        width={1100}
-        height={700}
-        priority
-      />
-      <div className="my-5">
-        <CustomDateRangePicker fetchAvailableRooms={fetchAvailableRooms} />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 mt-9 gap-10">
-        <div className="md:max-w-md">
-          <div>Rooms</div>
-          <div>Check out our rooms</div>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat.
-          </p>
-          <StyledLink path="/rooms" linkText="View Rooms" />
+    <div className="font-[family-name:var(--font-geist-sans)] text-lg">
+      <div className="min-h-[400px] relative">
+        <div className="bg-[url('/banner.jpg')] absolute inset-0 bg-no-repeat bg-cover"></div>
+        <div className="relative grid grid-cols-2 bg-blur bg-white/10 *:relative min-h-[400px]">
+          <Container classes="flex flex-col justify-center items-start">
+            <h1 className="text-6xl font-bold">
+              Forget Busy Work, Start Next Vacation
+            </h1>
+            <p className="text-xl font-bold mt-4 mb-8">
+              We provide what you need to enjoy your holiday with family. Time
+              to make another memorable moments
+            </p>
+            <StyledLink path="/rooms" linkText="Show More" />
+          </Container>
         </div>
-        <div className="relative mb-20">
-          <Image
-            src="/landing-large.jpg"
-            alt=""
-            className="ml-auto rounded-3xl"
-            width={500}
-            height={300}
-          />
-          <Image
-            src="/landing-small.jpg"
-            alt=""
-            className="absolute -bottom-14 rounded-3xl border-8 border-white"
-            width={350}
-            height={200}
-          />
+        <div className="bg-black text-alternate py-6 relative">
+          <Container classes="grid grid-cols-1 md:grid-cols-2">
+            <div className="flex gap-4">
+              <Image
+                alt=""
+                src="/bhh-logo.jpg"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
+              <div className="uppercase text-2xl">Beverly Hills Hotel</div>
+            </div>
+            <div></div>
+          </Container>
         </div>
       </div>
-    </Container>
+      <div className="py-5 bg-background text-black">
+        <Container>
+          <CustomDateRangePicker fetchAvailableRooms={fetchAvailableRooms} />
+        </Container>
+      </div>
+      <Container classes="my-10">
+        <h2 className="text-xl">Most Picked</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-h-[200px] gap-10">
+          <RoomHomeCard
+            imageName="deluxe-main"
+            roomPath="deluxe-room"
+            title="Deluxe Room"
+            price="150"
+          />
+          <div className="flex flex-col gap-6">
+            <RoomHomeCard
+              imageName="queen-main"
+              roomPath="queen-room"
+              title="Queen Room"
+              price="120"
+            />
+            <RoomHomeCard
+              imageName="king-main"
+              roomPath="king-room"
+              title="King Room"
+              price="135"
+            />
+          </div>
+          <RoomHomeCard
+            imageName="presidential-main"
+            roomPath="presidential-suite"
+            title="Presidential Suite"
+            price="350"
+          />
+        </div>
+      </Container>
+    </div>
   );
 };
 

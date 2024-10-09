@@ -6,14 +6,14 @@ const StyledButton = ({ isSubmitBtn = false, clickHandler, btnText }) => {
       {isSubmitBtn ? (
         <button
           type="submit"
-          className="bg-orange-800 text-white hover:bg-orange-900 transition-colors rounded-xl px-4 py-2"
+          className="bg-alternate text-black border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
         >
           {btnText}
         </button>
       ) : (
         <button
           type="button"
-          className="bg-orange-800 text-white hover:bg-orange-900 transition-colors rounded-xl px-4 py-2"
+          className="bg-alternate text-black border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
           onClick={clickHandler}
         >
           {btnText}

@@ -7,6 +7,7 @@ import Container from './Container';
 import { useAuth } from '@/context/AuthProvider';
 import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import NavLink from '../ui/NavLink';
 
 const Header = () => {
   const router = useRouter();
@@ -20,12 +21,12 @@ const Header = () => {
   };
 
   return (
-    <header>
+    <header className="py-2 border-4 border-b-black mb-4">
       <Container>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center font-medium font-[family-name:var(--font-geist-sans)] text-lg">
           <Link href="/">
             <Image
-              src="/logo.png"
+              src="/bhh-logo.jpg"
               alt="Company Logo"
               className="object-contain"
               width={130}
@@ -33,61 +34,19 @@ const Header = () => {
               priority
             />
           </Link>
-          <div className="flex gap-6 items-center">
-            <StyledLink linkText="Make Reservation" path="/make-reservation" />
-            <div className="relative">
-              <button
-                type="button"
-                className="px-4 py-2"
-                onClick={() => setShowAccountDropDown(!showAccountDropDown)}
-              >
-                {user ? `Hi ${userData.fullName}` : 'My Account'}
-              </button>
-              {showAccountDropDown && (
-                <div className="absolute px-4">
-                  {user ? (
-                    <Fragment>
-                      <div>
-                        <Link
-                          href="/account"
-                          onClick={() => setShowAccountDropDown(false)}
-                        >
-                          Profile
-                        </Link>
-                        <button type="button" onClick={handleSignOut}>
-                          Log Out
-                        </button>
-                      </div>
-                    </Fragment>
-                  ) : (
-                    <Fragment>
-                      <Link
-                        href="/login"
-                        onClick={() => setShowAccountDropDown(false)}
-                        className="block"
-                      >
-                        Sign in
-                      </Link>
-                      <Link
-                        href="/signup"
-                        onClick={() => setShowAccountDropDown(false)}
-                        className="block"
-                      >
-                        Sign up
-                      </Link>
-                    </Fragment>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <nav className="flex items-center gap-16">
+            <NavLink href="/">Home</NavLink>
+            <NavLink href="/rooms">Rooms</NavLink>
+            <NavLink href="/manage-reservation">Reservations</NavLink>
+            <NavLink href="/about">About</NavLink>
+            <Link
+              href="/login"
+              className="px-8 py-2 bg-alternate text-black hover:bg-black hover:text-alternate transition-colors hover:rounded-md"
+            >
+              Login
+            </Link>
+          </nav>
         </div>
-        <nav className="flex justify-evenly gap-16">
-          <Link href="/manage-reservation">Reservations</Link>
-          <Link href="/rooms">Rooms</Link>
-          <Link href="/special-offers">Special Offers</Link>
-          <Link href="/contact-us">Contact Us</Link>
-        </nav>
       </Container>
     </header>
   );

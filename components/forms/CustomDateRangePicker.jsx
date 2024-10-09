@@ -32,11 +32,6 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
     }, 300);
   };
 
-  // useEffect(() => {
-  //   updateDates(dateRange[0].startDate, dateRange[0].endDate);
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [dateRange[0].endDate, dateRange[0].startDate]);
-
   useEffect(() => {
     if (bookingDetails.checkInDate || bookingDetails.checkOutDate) {
       setDateRange([
@@ -54,63 +49,77 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Format the date range string for display in the single input field
+  const formattedDateRange = `${format(
+    dateRange[0].startDate,
+    'dd MMM yyyy'
+  )} - ${format(dateRange[0].endDate, 'dd MMM yyyy')}`;
+
+  // Handle the date range change to ensure end date is always at least +1 day from start date
+  const handleSelect = (ranges) => {
+    const { startDate, endDate } = ranges.selection;
+
+    // Ensure end date is at least one day after start date
+    if (endDate <= startDate) {
+      const newEndDate = addDays(startDate, 1);
+      setDateRange([{ ...ranges.selection, startDate, endDate: newEndDate }]);
+    } else {
+      setDateRange([ranges.selection]);
+    }
+
+    if (startDate && endDate && startDate !== endDate) {
+      setTimeout(() => {
+        setShowDatePicker(false);
+      }, 100);
+    }
+  };
+
+  const handleInputClick = () => {
+    setShowDatePicker((prev) => !prev);
+  };
+
   return (
-    <div className="flex items-end justify-center space-x-4 py-5 border border-gray-400 rounded-full p-4 relative">
-      <div className="flex flex-col">
-        <label className="text-xs text-gray-500 mb-1">Check in</label>
+    <div className="flex items-end justify-evenly space-x-4 py-5 p-4 relative">
+      <div className="flex flex-col w-80 relative">
+        <label className="text-lg mb-1">
+          Select Check-in & Check-out dates
+        </label>
         <input
-          className="w-40 p-2 rounded-full border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500 cursor-pointer"
+          className="w-full p-2 rounded-xl border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500 cursor-pointer"
           readOnly
-          value={format(dateRange[0].startDate, 'dd MMM yyyy')}
-          onClick={() => setShowDatePicker(!showDatePicker)}
+          value={formattedDateRange}
+          onClick={handleInputClick}
         />
+        {showDatePicker && (
+          <div className="absolute top-full z-10">
+            <DateRange
+              editableDateInputs={true}
+              onChange={handleSelect}
+              moveRangeOnFirstSelection={false}
+              ranges={dateRange}
+              rangeColors={['#725527']}
+              minDate={today}
+            />
+          </div>
+        )}
       </div>
-
-      {/* Check-out input */}
       <div className="flex flex-col">
-        <label className="text-xs text-gray-500 mb-1">Check out</label>
-        <input
-          className="w-40 p-2 rounded-full border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500 cursor-pointer"
-          readOnly
-          value={
-            dateRange[0].endDate
-              ? format(dateRange[0].endDate, 'dd MMM yyyy')
-              : 'Select a date'
-          }
-          onClick={() => setShowDatePicker(!showDatePicker)}
-        />
-      </div>
-
-      {/* Guest input */}
-      <div className="flex flex-col">
-        <label className="text-xs text-gray-500 mb-1">Guest</label>
-        <input
-          className="w-20 p-2 rounded-full border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500"
-          type="number"
-          min="1"
-          max="4"
+        <label className="text-lg mb-1">No. of Guest</label>
+        <select
+          className="w-80 p-2 rounded-xl border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500"
           value={guestCount}
           onChange={(e) => {
             setGuestCount(e.target.value);
             updateGuestCount(e.target.value);
           }}
-        />
+        >
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
       </div>
       <StyledButton btnText="Check Availability" clickHandler={updateParams} />
-
-      {/* Date Range Picker - Toggle Visibility */}
-      {showDatePicker && (
-        <div className="absolute top-16 z-10">
-          <DateRange
-            editableDateInputs={true}
-            onChange={(item) => setDateRange([item.selection])}
-            moveRangeOnFirstSelection={false}
-            ranges={dateRange}
-            rangeColors={['#FDBA12']} // Custom color for selected range
-            minDate={today}
-          />
-        </div>
-      )}
     </div>
   );
 };
