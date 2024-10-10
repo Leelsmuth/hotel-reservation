@@ -3,6 +3,7 @@
 import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import CustomDateRangePicker from '@/components/forms/CustomDateRangePicker';
 import Container from '@/components/layout/Container';
+import MainLayout from '@/components/layout/MainLayout';
 import HeadingTwo from '@/components/typography/HeadingTwo';
 import StyledLink from '@/components/ui/StyledLink';
 import Image from 'next/image';
@@ -17,7 +18,7 @@ const Home = () => {
   };
 
   return (
-    <div className="font-[family-name:var(--font-geist-sans)] text-lg">
+    <MainLayout className="font-[family-name:var(--font-geist-sans)] text-lg">
       <div className="min-h-[400px] relative">
         <div className="bg-[url('/banner.jpg')] absolute inset-0 bg-no-repeat bg-cover"></div>
         <div className="relative py-10 grid grid-cols-1 md:grid-cols-2 bg-blur bg-white/10 *:relative min-h-[400px]">
@@ -85,7 +86,7 @@ const Home = () => {
           />
         </div>
       </Container>
-    </div>
+    </MainLayout>
   );
 };
 

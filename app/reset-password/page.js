@@ -1,11 +1,13 @@
 'use client';
 
 import Spinner from '@/components/anim/Spinner';
+import AuthLayout from '@/components/layout/AuthLayout';
 import Container from '@/components/layout/Container';
+import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useAuth } from '@/context/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 const ResetPassword = () => {
   const router = useRouter();
@@ -50,35 +52,42 @@ const ResetPassword = () => {
     );
 
   return (
-    <Container>
-      <h1>Reset Password</h1>
-      <form onSubmit={handlePasswordReset}>
-        <div>
-          <label className="block">Email Address</label>
-          <input
-            type="email"
-            className="border w-full"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    <AuthLayout>
+      <Container classes="my-8">
+        <HeadingOne>Forgot your info?</HeadingOne>
+        <div className="text-primary text-xl mb-3">Get a new password</div>
+        <div className="mb-8">
+          Enter your registered Email Address on our records and will send you
+          information on how to reset your password
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {message && <p style={{ color: 'green' }}>{message}</p>}
-        <div>
-          <StyledButton btnText="Reset password" isSubmitBtn={true} />
-        </div>
-      </form>
-      {loading && (
-        <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-          <Spinner
-            spinnerColor="text-primary"
-            spinnerHeight="h-1/5"
-            spinnerWidth="w-1/5"
-          />
-        </div>
-      )}
-    </Container>
+        <form onSubmit={handlePasswordReset}>
+          <div className="mb-8">
+            <label className="block">Email Address</label>
+            <input
+              type="email"
+              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {message && <p style={{ color: 'green' }}>{message}</p>}
+          <div className="*:w-full">
+            <StyledButton btnText="Submit" isSubmitBtn={true} />
+          </div>
+        </form>
+        {loading && (
+          <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
+            <Spinner
+              spinnerColor="text-primary"
+              spinnerHeight="h-1/5"
+              spinnerWidth="w-1/5"
+            />
+          </div>
+        )}
+      </Container>
+    </AuthLayout>
   );
 };
 

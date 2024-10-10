@@ -1,7 +1,5 @@
 import localFont from 'next/font/local';
 import './globals.css';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
 import { AuthProvider } from '@/context/AuthProvider';
 import { BookingProvider } from '@/context/BookingContext';
 
@@ -29,11 +27,9 @@ const RootLayout = ({ children }) => {
       >
         <AuthProvider>
           <BookingProvider>
-            <Header />
-            <main className="font-[family-name:var(--font-geist-sans)] font-medium">
+            <div className="font-[family-name:var(--font-geist-sans)] font-medium">
               {children}
-            </main>
-            <Footer />
+            </div>
           </BookingProvider>
         </AuthProvider>
       </body>
