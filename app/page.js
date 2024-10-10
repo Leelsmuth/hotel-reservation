@@ -3,6 +3,7 @@
 import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import CustomDateRangePicker from '@/components/forms/CustomDateRangePicker';
 import Container from '@/components/layout/Container';
+import HeadingTwo from '@/components/typography/HeadingTwo';
 import StyledLink from '@/components/ui/StyledLink';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -19,7 +20,7 @@ const Home = () => {
     <div className="font-[family-name:var(--font-geist-sans)] text-lg">
       <div className="min-h-[400px] relative">
         <div className="bg-[url('/banner.jpg')] absolute inset-0 bg-no-repeat bg-cover"></div>
-        <div className="relative grid grid-cols-2 bg-blur bg-white/10 *:relative min-h-[400px]">
+        <div className="relative py-10 grid grid-cols-1 md:grid-cols-2 bg-blur bg-white/10 *:relative min-h-[400px]">
           <Container classes="flex flex-col justify-center items-start">
             <h1 className="text-6xl font-bold">
               Forget Busy Work, Start Next Vacation
@@ -32,8 +33,8 @@ const Home = () => {
           </Container>
         </div>
         <div className="bg-black text-alternate py-6 relative">
-          <Container classes="grid grid-cols-1 md:grid-cols-2">
-            <div className="flex gap-4">
+          <Container>
+            <div className="flex gap-4 items-center justify-center">
               <Image
                 alt=""
                 src="/bhh-logo.jpg"
@@ -41,9 +42,10 @@ const Home = () => {
                 height={80}
                 className="object-contain"
               />
-              <div className="uppercase text-2xl">Beverly Hills Hotel</div>
+              <div className="uppercase text-2xl">
+                Welcome to Beverly Hills Hotel
+              </div>
             </div>
-            <div></div>
           </Container>
         </div>
       </div>
@@ -53,7 +55,7 @@ const Home = () => {
         </Container>
       </div>
       <Container classes="my-10">
-        <h2 className="text-xl">Most Picked</h2>
+        <HeadingTwo classes="mb-4">Most Picked</HeadingTwo>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-h-[200px] gap-10">
           <RoomHomeCard
             imageName="deluxe-main"

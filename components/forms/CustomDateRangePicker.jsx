@@ -79,11 +79,9 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
   };
 
   return (
-    <div className="flex items-end justify-evenly space-x-4 py-5 p-4 relative">
-      <div className="flex flex-col w-80 relative">
-        <label className="text-lg mb-1">
-          Select Check-in & Check-out dates
-        </label>
+    <div className="flex flex-col md:flex-row md:items-end justify-center gap-8 lg:gap-16 py-5 p-4 relative">
+      <div className="md:w-72 relative">
+        <label className="block text-lg mb-1">Check-in & Check-out dates</label>
         <input
           className="w-full p-2 rounded-xl border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500 cursor-pointer"
           readOnly
@@ -103,10 +101,10 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
           </div>
         )}
       </div>
-      <div className="flex flex-col">
-        <label className="text-lg mb-1">No. of Guest</label>
+      <div className="">
+        <label className="block text-lg mb-1">Guest No.</label>
         <select
-          className="w-80 p-2 rounded-xl border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500"
+          className="p-2 w-full rounded-xl border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500"
           value={guestCount}
           onChange={(e) => {
             setGuestCount(e.target.value);
