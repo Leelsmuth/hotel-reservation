@@ -18,8 +18,8 @@ const RoomDetails = ({ name }) => {
           <Image
             src={`/rooms/${name}-main.jpg`}
             alt=""
-            width={500}
-            height={700}
+            width={600}
+            height={850}
             className="object-cover h-full w-full"
           />
           <div className="flex flex-col space-between gap-6">

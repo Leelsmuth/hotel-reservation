@@ -1,8 +1,11 @@
 'use client';
 
 import Spinner from '@/components/anim/Spinner';
+import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import Container from '@/components/layout/Container';
+import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
+import StyledLink from '@/components/ui/StyledLink';
 import { RESERVATION_STATUS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -80,14 +83,20 @@ const ManageReservation = () => {
   };
 
   return (
-    <Container>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block">Booking/Reference ID</label>
+    <Container classes="min-h-[70vh]">
+      <div className="text-right mt-14 mb-20">
+        <StyledLink linkText="New Reservation" path="make-reservation" />
+      </div>
+      <HeadingOne classes="text-center mb-3 uppercase mt-8">
+        Find Your reservation
+      </HeadingOne>
+      <div className="max-w-96 mx-auto mb-4">
+        <div className="mb-6">
+          <label className="block text-lg">Booking/Reference ID</label>
           <input className="border w-full" type="text" ref={bookingId} />
         </div>
         <div>
-          <label className="block">Email</label>
+          <label className="block text-lg">Email</label>
           <input className="border w-full" type="email" ref={email} />
         </div>
       </div>
@@ -167,6 +176,38 @@ const ManageReservation = () => {
           />
         </div>
       )}
+      <hr className="mt-16" />
+      <div className="mt-16">
+        <h2 className="text-2xl font-bold mb-6 uppercase">
+          Check out our rooms
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <RoomHomeCard
+            imageName="deluxe-main"
+            roomPath="deluxe-room"
+            title="Deluxe Room"
+            price="150"
+          />
+          <RoomHomeCard
+            imageName="queen-main"
+            roomPath="queen-room"
+            title="Queen Room"
+            price="120"
+          />
+          <RoomHomeCard
+            imageName="king-main"
+            roomPath="king-room"
+            title="King Room"
+            price="135"
+          />
+          <RoomHomeCard
+            imageName="presidential-main"
+            roomPath="presidential-suite"
+            title="Presidential Suite"
+            price="350"
+          />
+        </div>
+      </div>
     </Container>
   );
 };

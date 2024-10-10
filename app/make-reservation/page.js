@@ -11,6 +11,9 @@ import { ROOM_TYPES_IDS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Spinner from '@/components/anim/Spinner';
+import RoomReservationCard from '@/components/cards/RoomReservationCard';
+import HeadingOne from '@/components/typography/HeadingOne';
+import RoomHomeCard from '@/components/cards/RoomHomeCard';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -25,6 +28,7 @@ const MakeReservation = () => {
   } = useBooking();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showingDates, setShowingDates] = useState('');
   const [reservationData, setReservationData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -49,7 +53,7 @@ const MakeReservation = () => {
   const handleReservation = (roomTypeId) => {
     setShowingSection(2);
     setSelectedRoom(availableRooms[roomTypeId]);
-    updateRoomSelection(roomTypeId, selectedRoom.pathId);
+    updateRoomSelection(roomTypeId, availableRooms[roomTypeId].pathId);
   };
 
   const submitReservation = async (e) => {
@@ -117,6 +121,44 @@ const MakeReservation = () => {
     const bookedFrom = format(checkInDate, 'yyyy-MM-dd');
     const bookedUntil = format(checkOutDate, 'yyyy-MM-dd');
 
+    setAvailableRooms({
+      eSuite: {
+        pathId: 'D22YVLBNizCrY9tsiM7i',
+        status: 'available',
+        price: 200,
+        typeId: 'eSuite',
+        bookings: [],
+        id: 5500,
+      },
+      pSuite: {
+        pathId: '7dfq3KNLhbtz9hPf8dfx',
+        price: 190,
+        bookings: [],
+        status: 'available',
+        id: 4300,
+        typeId: 'pSuite',
+      },
+      dStandard: {
+        pathId: '0CgKQ7NHaYh2yNRTN1rc',
+        bookings: [],
+        id: 3400,
+        status: 'available',
+        price: 150,
+        typeId: 'dStandard',
+      },
+      sSuite: {
+        pathId: '6q62jwiDelmGaBpcMzLw',
+        bookings: [],
+        price: 120,
+        status: 'available',
+        id: 1200,
+        typeId: 'sSuite',
+      },
+    });
+    setShowingDates(`${bookedFrom} to ${bookedUntil}`);
+    setIsFetchingRooms(false);
+    return;
+
     try {
       const res = await fetch(
         `/api/rooms/available?startDate=${bookedFrom}&endDate=${bookedUntil}`,
@@ -129,6 +171,8 @@ const MakeReservation = () => {
 
       const data = await res.json();
       setAvailableRooms(data.availableRooms);
+      console.log(data.availableRooms);
+      setShowingDates(`${bookedFrom} to ${bookedUntil}`);
       const firstAvailableRoom = Object.values(data.availableRooms).find(
         (room) => room !== null
       );
@@ -158,7 +202,7 @@ const MakeReservation = () => {
 
   return (
     <Fragment>
-      <Container>
+      <Container classes="mb-20">
         {showingSection === 1 && (
           <Fragment>
             <div className="my-5">
@@ -167,36 +211,94 @@ const MakeReservation = () => {
               />
             </div>
             {!isFetchingRooms ? (
-              <div>
-                <h1>Available Rooms</h1>
-                <div className="text-xl font-bold flex gap-6 my-4">
-                  <StyledButton
-                    btnText="Executive Suite"
-                    clickHandler={() =>
-                      setShowingRoom(ROOM_TYPES_IDS.EXECUTIVE)
-                    }
-                  />
-                  <StyledButton
-                    btnText="Premium Suite"
-                    clickHandler={() => setShowingRoom(ROOM_TYPES_IDS.PREMIUM)}
-                  />
-                  <StyledButton
-                    btnText="Double Standard"
-                    clickHandler={() => setShowingRoom(ROOM_TYPES_IDS.DOUBLE)}
-                  />
-                  <StyledButton
-                    btnText="Standard Suite"
-                    clickHandler={() => setShowingRoom(ROOM_TYPES_IDS.STANDARD)}
-                  />
+              <div className="min-h-[50vw]">
+                <HeadingOne>Now showing Available Rooms</HeadingOne>
+                <div className="mb-6">
+                  From{' '}
+                  <span className="italic font-semibold text-lg">
+                    {showingDates}
+                  </span>
                 </div>
-                <RoomReservation
-                  roomTypeId={showingRoom}
-                  reservationHandler={handleReservation}
-                />
+                <div className="flex flex-col gap-6">
+                  {availableRooms?.eSuite && (
+                    <RoomReservationCard
+                      reservationHandler={handleReservation}
+                      roomTypeId={ROOM_TYPES_IDS.EXECUTIVE}
+                      imageName="presidential-main"
+                      roomPath="presidential-suite"
+                      title="Presidential Suite"
+                      price="350"
+                    />
+                  )}
+                  {availableRooms?.pSuite && (
+                    <RoomReservationCard
+                      reservationHandler={handleReservation}
+                      roomTypeId={ROOM_TYPES_IDS.PREMIUM}
+                      imageName="deluxe-main"
+                      roomPath="deluxe-room"
+                      title="Deluxe Room"
+                      price="150"
+                    />
+                  )}
+                  {availableRooms?.dStandard && (
+                    <RoomReservationCard
+                      reservationHandler={handleReservation}
+                      roomTypeId={ROOM_TYPES_IDS.DOUBLE}
+                      imageName="king-main"
+                      roomPath="king-room"
+                      title="King Room"
+                      price="135"
+                    />
+                  )}
+                  {availableRooms?.sSuite && (
+                    <RoomReservationCard
+                      reservationHandler={handleReservation}
+                      roomTypeId={ROOM_TYPES_IDS.STANDARD}
+                      imageName="queen-main"
+                      roomPath="queen-room"
+                      title="Queen Room"
+                      price="120"
+                    />
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="text-2xl font-medium">Loading...</div>
+              <div className="text-2xl font-medium min-h-[50vw]">
+                Loading...
+              </div>
             )}
+            <hr className="mt-16" />
+            <div className="mt-16">
+              <h2 className="text-2xl font-bold mb-6 uppercase">
+                Find out more about our rooms
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <RoomHomeCard
+                  imageName="deluxe-main"
+                  roomPath="deluxe-room"
+                  title="Deluxe Room"
+                  price="150"
+                />
+                <RoomHomeCard
+                  imageName="queen-main"
+                  roomPath="queen-room"
+                  title="Queen Room"
+                  price="120"
+                />
+                <RoomHomeCard
+                  imageName="king-main"
+                  roomPath="king-room"
+                  title="King Room"
+                  price="135"
+                />
+                <RoomHomeCard
+                  imageName="presidential-main"
+                  roomPath="presidential-suite"
+                  title="Presidential Suite"
+                  price="350"
+                />
+              </div>
+            </div>
           </Fragment>
         )}
         {showingSection !== 1 && (
@@ -258,106 +360,110 @@ const MakeReservation = () => {
                       />
                     </div>
                   </div>
-                  <div>
-                    <div>Occupant 1</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
+                  {false && (
+                    <Fragment>
                       <div>
-                        <label className="block font-bold">Full Name</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="text"
-                          value={guestNameOne}
-                          onChange={(e) =>
-                            setGuestNameOne(e.target.value.trim())
-                          }
-                        />
+                        <div>Occupant 1</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
+                          <div>
+                            <label className="block font-bold">Full Name</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="text"
+                              value={guestNameOne}
+                              onChange={(e) =>
+                                setGuestNameOne(e.target.value.trim())
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold">Age</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="number"
+                              value={guestAgeOne}
+                              onChange={(e) => setGuestAgeOne(e.target.value)}
+                            />
+                          </div>
+                        </div>
                       </div>
                       <div>
-                        <label className="block font-bold">Age</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="number"
-                          value={guestAgeOne}
-                          onChange={(e) => setGuestAgeOne(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div>Occupant 2</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
-                      <div>
-                        <label className="block font-bold">Full Name</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="text"
-                          value={guestNameTwo}
-                          onChange={(e) =>
-                            setGuestNameTwo(e.target.value.trim())
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-bold">Age</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="number"
-                          value={guestAgeTwo}
-                          onChange={(e) => setGuestAgeTwo(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div>Occupant 3</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
-                      <div>
-                        <label className="block font-bold">Full Name</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="text"
-                          value={guestNameThree}
-                          onChange={(e) =>
-                            setGuestNameThree(e.target.value.trim())
-                          }
-                        />
+                        <div>Occupant 2</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
+                          <div>
+                            <label className="block font-bold">Full Name</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="text"
+                              value={guestNameTwo}
+                              onChange={(e) =>
+                                setGuestNameTwo(e.target.value.trim())
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold">Age</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="number"
+                              value={guestAgeTwo}
+                              onChange={(e) => setGuestAgeTwo(e.target.value)}
+                            />
+                          </div>
+                        </div>
                       </div>
                       <div>
-                        <label className="block font-bold">Age</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="number"
-                          value={guestAgeThree}
-                          onChange={(e) => setGuestAgeThree(e.target.value)}
-                        />
+                        <div>Occupant 3</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
+                          <div>
+                            <label className="block font-bold">Full Name</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="text"
+                              value={guestNameThree}
+                              onChange={(e) =>
+                                setGuestNameThree(e.target.value.trim())
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold">Age</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="number"
+                              value={guestAgeThree}
+                              onChange={(e) => setGuestAgeThree(e.target.value)}
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div>Occupant 4</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
                       <div>
-                        <label className="block font-bold">Full Name</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="text"
-                          value={guestNameFour}
-                          onChange={(e) =>
-                            setGuestNameFour(e.target.value.trim())
-                          }
-                        />
+                        <div>Occupant 4</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
+                          <div>
+                            <label className="block font-bold">Full Name</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="text"
+                              value={guestNameFour}
+                              onChange={(e) =>
+                                setGuestNameFour(e.target.value.trim())
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold">Age</label>
+                            <input
+                              className="border border-black rounded-md w-full"
+                              type="number"
+                              value={guestAgeFour}
+                              onChange={(e) => setGuestAgeFour(e.target.value)}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block font-bold">Age</label>
-                        <input
-                          className="border border-black rounded-md w-full"
-                          type="number"
-                          value={guestAgeFour}
-                          onChange={(e) => setGuestAgeFour(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    </Fragment>
+                  )}
                   <StyledButton
                     btnText="Next"
                     clickHandler={() => setShowingSection(3)}
