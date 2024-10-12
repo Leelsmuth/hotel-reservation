@@ -111,10 +111,11 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
             updateGuestCount(e.target.value);
           }}
         >
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
+          {[1, 2, 3, 4].map((num) => (
+            <option value={num} key={num}>
+              {num}
+            </option>
+          ))}
         </select>
       </div>
       <StyledButton btnText="Check Availability" clickHandler={updateParams} />

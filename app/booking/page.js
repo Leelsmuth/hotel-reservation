@@ -1,7 +1,10 @@
+// pages/Booking.js
 'use client';
 
 import Spinner from '@/components/anim/Spinner';
-import PayPalButton from '@/components/payment/PayPalButton';
+import Container from '@/components/layout/Container';
+import StripeCheckout from '@/components/payment/StripeCheckout';
+import HeadingOne from '@/components/typography/HeadingOne';
 import { RESERVATION_STATUS } from '@/lib/static/roomLegend';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
@@ -14,6 +17,7 @@ const Booking = () => {
   const [bookingDetails, setBookingDetails] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchReservation = async (reservationId) => {
     setLoading(true);
@@ -21,10 +25,7 @@ const Booking = () => {
 
     try {
       const response = await fetch(`/api/rooms/booking?id=${reservationId}`);
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`Error: ${response.statusText}`);
 
       const data = await response.json();
       setBookingDetails(data);
@@ -35,18 +36,21 @@ const Booking = () => {
     }
   };
 
-  const completeBooking = async (paymentDetails) => {
+  const completeBooking = async (paymentIntent) => {
     const updates = {
-      paymentDetails,
+      paymentDetails: {
+        paymentStatus: 'COMPLETED',
+        paymentIntentId: paymentIntent.id,
+        paymentAmount: paymentIntent.amount,
+      },
       bookingStatus: RESERVATION_STATUS.BOOKED,
     };
 
+    setIsSubmitting(true);
     try {
       const response = await fetch('/api/rooms/booking', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reservationId, updates, bookingId }),
       });
 
@@ -56,30 +60,21 @@ const Booking = () => {
 
       const data = await response.json();
 
+      await fetch('/api/send-confirmation-email/booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient: bookingDetails.contactDetails.email,
+          bookingDetails,
+        }),
+      });
+
       router.replace(`/booking/confirmation?bId=${data.bookingId}`);
     } catch (error) {
       console.error('Error:', error);
     }
-  };
-
-  const handlePaymentSuccess = (details) => {
-    const paymentDetails = {
-      paymentMode: 'PAYPAL',
-      paymentId: details.id,
-      currency: details.purchase_units[0].amount.currency_code,
-      amountPaid: details.purchase_units[0].amount.value,
-      paymentStatus: details.status,
-      payInitiated: details.create_time,
-      paidOn: details.update_time,
-      payerDetails: details.payer,
-    };
-
-    completeBooking(paymentDetails);
-  };
-
-  const handlePaymentError = (error) => {
-    console.error('Payment failed: ', error);
-    alert('Payment failed. Please try again.');
   };
 
   useEffect(() => {
@@ -96,7 +91,7 @@ const Booking = () => {
   }, [searchParams]);
 
   return (
-    <Fragment>
+    <Container classes="my-10">
       {loading ? (
         <div className="min-h-screen text-center max-w-screen-lg mx-auto">
           <Spinner
@@ -107,16 +102,28 @@ const Booking = () => {
         </div>
       ) : (
         <div>
-          <h1>Checkout</h1>
-          <div>Total Price: $ {bookingDetails?.totalPrice}</div>
-          <PayPalButton
-            amount={bookingDetails?.totalPrice}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-          />
+          <HeadingOne>Complete Booking</HeadingOne>
+          {!isSubmitting && (
+            <Fragment>
+              <div>Total Price: $ {bookingDetails?.totalPrice}</div>
+              <StripeCheckout
+                amount={bookingDetails?.totalPrice}
+                onPaymentSuccess={completeBooking} // Pass completeBooking as a callback
+              />
+            </Fragment>
+          )}
+          {isSubmitting && (
+            <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
+              <Spinner
+                spinnerColor="text-primary"
+                spinnerHeight="h-1/5"
+                spinnerWidth="w-1/5"
+              />
+            </div>
+          )}
         </div>
       )}
-    </Fragment>
+    </Container>
   );
 };
 

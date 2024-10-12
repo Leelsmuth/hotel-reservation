@@ -1,6 +1,5 @@
 'use client';
 
-import RoomReservation from '@/components/cards/RoomReservation';
 import CustomDateRangePicker from '@/components/forms/CustomDateRangePicker';
 import Container from '@/components/layout/Container';
 import StyledButton from '@/components/ui/StyledButton';
@@ -14,6 +13,7 @@ import Spinner from '@/components/anim/Spinner';
 import RoomReservationCard from '@/components/cards/RoomReservationCard';
 import HeadingOne from '@/components/typography/HeadingOne';
 import RoomHomeCard from '@/components/cards/RoomHomeCard';
+import HeadingTwo from '@/components/typography/HeadingTwo';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -24,6 +24,7 @@ const MakeReservation = () => {
     updateRoomPrice,
     updateContactDetails,
     updateGuestDetails,
+    updateBooking,
     resetBookingDetails,
   } = useBooking();
 
@@ -59,10 +60,20 @@ const MakeReservation = () => {
   const submitReservation = async (e) => {
     e.preventDefault();
     const contactDetails = {
-      name: contactName.current.value,
-      email: contactEmail.current.value,
-      phone: contactPhone.current.value,
+      name: contactName.current.value.trim(),
+      email: contactEmail.current.value.trim(),
+      phone: contactPhone.current.value.trim(),
     };
+
+    if (
+      !contactDetails.name ||
+      !contactDetails.email ||
+      !contactDetails.phone
+    ) {
+      alert('Contact details is required');
+      return;
+    }
+
     updateContactDetails(contactDetails);
 
     const guestDetails = [
@@ -104,10 +115,23 @@ const MakeReservation = () => {
       const data = await response.json();
       setReservationData(data);
       setShowingSection(1);
+
+      await fetch('/api/send-confirmation-email/reservation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient: details.contactDetails.email,
+          details,
+        }),
+      });
+
       router.push(
         `/make-reservation/confirmation?resId=${data.reservationId}&bId=${data.bookingId}`
       );
-      resetBookingDetails();
+      updateBooking(details);
+      // resetBookingDetails();
     } catch (error) {
       setError(error.message);
       console.error('Error during reservation:', error);
@@ -303,61 +327,125 @@ const MakeReservation = () => {
         )}
         {showingSection !== 1 && (
           <Fragment>
-            <form onSubmit={submitReservation}>
+            <form onSubmit={submitReservation} className="my-8">
               {showingSection === 2 && (
                 <div>
-                  <div>Reservation form</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
+                  <HeadingOne classes="mb-5 text-center uppercase">
+                    Reservation form
+                  </HeadingOne>
+                  <div className="grid grid-cols-1 gap-6 max-w-96 mx-auto mb-6">
                     <div>
-                      <label className="block font-bold">Check in</label>
+                      <label className="block font-bold">Booking dates</label>
                       <input
-                        className="border border-black rounded-md w-full"
+                        className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                         type="text"
-                        value={format(
+                        value={`${format(
                           bookingDetails.checkInDate,
                           'dd MMM yyyy'
-                        )}
-                        readOnly
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold">Check Out</label>
-                      <input
-                        className="border border-black rounded-md w-full"
-                        type="text"
-                        value={format(
+                        )} to ${format(
                           bookingDetails.checkOutDate,
                           'dd MMM yyyy'
-                        )}
+                        )}`}
                         readOnly
                       />
+                      <div className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => setShowingSection(1)}
+                          className="uppercase text-primary font-bold text-base hover:underline"
+                        >
+                          Change date
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-1 mb-3">
                     <div>
                       <label className="block font-bold">Room Type</label>
-                      <input
-                        className="border border-black rounded-md w-full"
-                        type="text"
-                        value={ROOM_TYPES_NAMES[bookingDetails.roomTypeId]}
-                        readOnly
-                      />
+                      <select
+                        className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
+                        value={selectedRoom.typeId}
+                        onChange={(e) => {
+                          setSelectedRoom(availableRooms[e.target.value]);
+                        }}
+                      >
+                        {availableRooms.eSuite && (
+                          <option value={ROOM_TYPES_IDS.EXECUTIVE}>
+                            {ROOM_TYPES_NAMES.eSuite}
+                          </option>
+                        )}
+                        {availableRooms.pSuite && (
+                          <option value={ROOM_TYPES_IDS.PREMIUM}>
+                            {ROOM_TYPES_NAMES.pSuite}
+                          </option>
+                        )}
+                        {availableRooms.dStandard && (
+                          <option value={ROOM_TYPES_IDS.DOUBLE}>
+                            {ROOM_TYPES_NAMES.dStandard}
+                          </option>
+                        )}
+                        {availableRooms.sSuite && (
+                          <option value={ROOM_TYPES_IDS.STANDARD}>
+                            {ROOM_TYPES_NAMES.sSuite}
+                          </option>
+                        )}
+                      </select>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-1 mb-3">
                     <div>
                       <label className="block font-bold">
                         No. of Occupants
                       </label>
-                      <input
-                        className="border border-black rounded-md w-full"
-                        type="number"
-                        min={1}
-                        max={4}
-                        required
+                      <select
+                        className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
                         value={bookingDetails.guestCount}
                         onChange={(e) => updateGuestCount(e.target.value)}
-                      />
+                      >
+                        {[1, 2, 3, 4].map((num) => (
+                          <option value={num} key={num}>
+                            {num}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <hr />
+                  <HeadingTwo classes="max-w-96 mx-auto mt-5">
+                    Contact Details
+                  </HeadingTwo>
+                  <div className="grid grid-cols-1 gap-6 max-w-96 mx-auto mb-3">
+                    <div className="grid grid-cols-1 mb-3 gap-3">
+                      <div>
+                        <label className="block font-bold">Full Name</label>
+                        <input
+                          className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
+                          type="text"
+                          ref={contactName}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold">Email</label>
+                        <input
+                          className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
+                          type="email"
+                          ref={contactEmail}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold">Phone Number</label>
+                        <input
+                          className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
+                          type="text"
+                          ref={contactPhone}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="*:w-full">
+                      {/* <StyledButton
+                        btnText="Back"
+                        clickHandler={() => setShowingSection(2)}
+                      /> */}
+                      <StyledButton isSubmitBtn={true} btnText="Reserve" />
                     </div>
                   </div>
                   {false && (
@@ -368,7 +456,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Full Name</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="text"
                               value={guestNameOne}
                               onChange={(e) =>
@@ -379,7 +467,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Age</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="number"
                               value={guestAgeOne}
                               onChange={(e) => setGuestAgeOne(e.target.value)}
@@ -393,7 +481,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Full Name</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="text"
                               value={guestNameTwo}
                               onChange={(e) =>
@@ -404,7 +492,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Age</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="number"
                               value={guestAgeTwo}
                               onChange={(e) => setGuestAgeTwo(e.target.value)}
@@ -418,7 +506,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Full Name</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="text"
                               value={guestNameThree}
                               onChange={(e) =>
@@ -429,7 +517,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Age</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="number"
                               value={guestAgeThree}
                               onChange={(e) => setGuestAgeThree(e.target.value)}
@@ -443,7 +531,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Full Name</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="text"
                               value={guestNameFour}
                               onChange={(e) =>
@@ -454,7 +542,7 @@ const MakeReservation = () => {
                           <div>
                             <label className="block font-bold">Age</label>
                             <input
-                              className="border border-black rounded-md w-full"
+                              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                               type="number"
                               value={guestAgeFour}
                               onChange={(e) => setGuestAgeFour(e.target.value)}
@@ -464,10 +552,10 @@ const MakeReservation = () => {
                       </div>
                     </Fragment>
                   )}
-                  <StyledButton
+                  {/* <StyledButton
                     btnText="Next"
                     clickHandler={() => setShowingSection(3)}
-                  />
+                  /> */}
                 </div>
               )}
               {showingSection === 3 && (
@@ -477,7 +565,7 @@ const MakeReservation = () => {
                     <div>
                       <label className="block font-bold">Full Name</label>
                       <input
-                        className="border border-black rounded-md w-full"
+                        className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                         type="text"
                         ref={contactName}
                       />
@@ -485,7 +573,7 @@ const MakeReservation = () => {
                     <div>
                       <label className="block font-bold">Email</label>
                       <input
-                        className="border border-black rounded-md w-full"
+                        className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                         type="email"
                         ref={contactEmail}
                       />
@@ -493,7 +581,7 @@ const MakeReservation = () => {
                     <div>
                       <label className="block font-bold">Phone Number</label>
                       <input
-                        className="border border-black rounded-md w-full"
+                        className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
                         type="text"
                         ref={contactPhone}
                       />
