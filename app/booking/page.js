@@ -5,6 +5,8 @@ import Spinner from '@/components/anim/Spinner';
 import Container from '@/components/layout/Container';
 import StripeCheckout from '@/components/payment/StripeCheckout';
 import HeadingOne from '@/components/typography/HeadingOne';
+import { useAuth } from '@/context/AuthProvider';
+import { useBooking } from '@/context/BookingContext';
 import { RESERVATION_STATUS } from '@/lib/static/roomLegend';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
@@ -19,6 +21,9 @@ const Booking = () => {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { updateBooking, updateIsGuest, updateUserId } = useBooking();
+  const { user } = useAuth();
+
   const fetchReservation = async (reservationId) => {
     setLoading(true);
     setError(null);
@@ -29,6 +34,7 @@ const Booking = () => {
 
       const data = await response.json();
       setBookingDetails(data);
+      updateBooking(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -76,6 +82,13 @@ const Booking = () => {
       console.error('Error:', error);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      updateIsGuest(false);
+      updateUserId(user.uid);
+    }
+  }, [user]);
 
   useEffect(() => {
     const resId = searchParams.get('resId');

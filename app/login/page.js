@@ -7,16 +7,18 @@ import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useAuth } from '@/context/AuthProvider';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const Login = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, loading, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const redirectTo = searchParams.get('redirectTo') || '/';
 
   const handleSignin = async (event) => {
     event.preventDefault();
@@ -24,8 +26,7 @@ const Login = () => {
 
     try {
       await login(email, password);
-
-      router.push('/');
+      router.push(redirectTo);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     }
@@ -33,9 +34,9 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push(redirectTo);
     }
-  }, [user, router]);
+  }, [user, router, redirectTo]);
 
   return (
     <AuthLayout>

@@ -4,21 +4,44 @@ import Checkmark from '@/components/icons/Checkmark';
 import Container from '@/components/layout/Container';
 import HeadingOne from '@/components/typography/HeadingOne';
 import AltStyledButton from '@/components/ui/AltStyledButton';
-import StyledLink from '@/components/ui/StyledLink';
+import AltStyledLink from '@/components/ui/AltStyledLink';
+import StyledButton from '@/components/ui/StyledButton';
+import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 const ReservationConfirmation = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { bookingDetails, updateBooking, resetBookingDetails } = useBooking();
+  const {
+    bookingDetails,
+    updateBooking,
+    resetBookingDetails,
+    updateIsGuest,
+    updateUserId,
+  } = useBooking();
+  const { user } = useAuth();
 
   const [reservationId, setReservationId] = useState('');
   const [bookingId, setBookingId] = useState('');
 
   const bookingHandler = () => {
+    if (user) {
+      updateIsGuest(false);
+      updateUserId(user.uid);
+    }
     router.replace(`/booking?resId=${reservationId}&bId=${bookingId}`);
+  };
+
+  const handleBookingLogin = () => {
+    const redirectUrl = `/booking?resId=${reservationId}&bId=${bookingId}`;
+    router.push(`/login?redirectTo=${encodeURIComponent(redirectUrl)}`);
+  };
+
+  const handleBookingSignup = () => {
+    const redirectUrl = `/booking?resId=${reservationId}&bId=${bookingId}`;
+    router.push(`/signup?redirectTo=${encodeURIComponent(redirectUrl)}`);
   };
 
   useEffect(() => {
@@ -48,13 +71,37 @@ const ReservationConfirmation = () => {
           an hour and will be lost if not booked before then.
         </p>
         <div className="flex flex-col text-center gap-6 mt-6">
-          <StyledLink linkText="Return to Homepage" path="/" />
-          <AltStyledButton
-            btnText="Proceed to Booking"
-            clickHandler={bookingHandler}
-          />
+          <AltStyledLink linkText="Return to Homepage" path="/" />
+          {user ? (
+            <StyledButton
+              btnText="Proceed to Booking"
+              clickHandler={bookingHandler}
+            />
+          ) : (
+            <Fragment>
+              <div className="text-2xl font-bold">OR</div>
+              <div>
+                <div className="text-xl mb-2">Proceed to Booking:</div>
+                <div className=" flex flex-col gap-4 justify-center px-4">
+                  <StyledButton
+                    btnText="Existing customer? Login"
+                    clickHandler={handleBookingLogin}
+                  />
+                  <AltStyledButton
+                    btnText="New customer? Create account"
+                    clickHandler={handleBookingSignup}
+                  />
+                  <StyledButton
+                    btnText="Continue as Guest"
+                    clickHandler={bookingHandler}
+                  />
+                </div>
+              </div>
+            </Fragment>
+          )}
         </div>
       </div>
+      <div className="h-60"></div>
     </Container>
   );
 };

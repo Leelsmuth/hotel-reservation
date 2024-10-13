@@ -5,32 +5,29 @@ import AuthLayout from '@/components/layout/AuthLayout';
 import Container from '@/components/layout/Container';
 import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
+import { sendEmailVerification } from 'firebase/auth';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 const SignUp = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/';
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSignup = async (event) => {
     event.preventDefault();
     setError('');
-
-    // if (password.trim() !== confirmPassword.trim()) {
-    //   setError('Password and Confirm password must match');
-    //   return;
-    // }
-
     setLoading(true);
+
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -49,8 +46,10 @@ const SignUp = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Signup successful!');
-        router.push('/login');
+        await sendEmailVerification(data.user);
+        alert('Signup successful! Verification email has been sent');
+        localStorage.setItem('redirectTo', redirectTo);
+        router.push('/');
       } else {
         setError(data.message || 'Something went wrong. Please try again.');
       }
@@ -115,16 +114,6 @@ const SignUp = () => {
               required
             />
           </div>
-          {/* <div className="mb-8">
-            <label className="block">Confirm Password</label>
-            <input
-              type="password"
-              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div> */}
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div className="mb-1 text-base text-center">
             By signing up you agree to our{' '}
