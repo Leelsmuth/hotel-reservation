@@ -1,7 +1,7 @@
 'use client';
 
 import AuthLayout from '@/components/layout/AuthLayout';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '@/lib/firebase/firebase';
 import {
@@ -11,14 +11,20 @@ import {
 } from 'firebase/auth';
 import Container from '@/components/layout/Container';
 import Link from 'next/link';
+import Spinner from '@/components/anim/Spinner';
+import HeadingOne from '@/components/typography/HeadingOne';
+import StyledButton from '@/components/ui/StyledButton';
+import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthProvider';
 
 const AuthManager = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const actionMode = searchParams.get('mode') || '';
   const actionCode = searchParams.get('oobCode') || '';
-  const continueUrl = searchParams.get('continueUrl');
-  const lang = searchParams.get('lang') || 'en';
+  const { initiatePasswordReset } = useAuth();
+
+  const { showToast, removeToast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,23 +32,57 @@ const AuthManager = () => {
   const [error, setError] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState('Verifying...');
 
-  // Handle password reset submission
+  const errorToastId = useRef(null);
+
+  const handleSuccess = (message) => {
+    showToast(message, 'success', {
+      autoClose: true,
+    });
+  };
+
+  const handleError = (error) => {
+    showToast(error, 'error', {
+      autoClose: true,
+    });
+  };
+
+  const handleErrorAction = (error, actionLabel, actionFxn) => {
+    errorToastId.current = showToast(error, 'error', {
+      action: () => actionFxn,
+      actionLabel: actionLabel,
+      autoClose: false,
+    });
+  };
+
+  const reinitiatePasswordReset = async () => {
+    await initiatePasswordReset(email);
+    handleSuccess('Password reset link resent! Check inbox/junk');
+    router.replace('/');
+    if (errorToastId.current) {
+      removeToast(errorToastId.current);
+      errorToastId.current = null;
+    }
+  };
+
   const handlePasswordReset = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // Confirm the password reset using Firebase API
       await confirmPasswordReset(auth, actionCode, password);
 
-      // Redirect to login after successful password reset
-      alert(
+      handleSuccess(
         'Password reset successful! You can now log in with your new password.'
       );
-      router.push('/login');
+      router.replace('/login');
     } catch (err) {
       setError(err.message || 'Failed to reset password. Please try again.');
+      handleErrorAction(
+        'Something went wrong. Try again',
+        'Get New Link',
+        reinitiatePasswordReset
+      );
     } finally {
       setLoading(false);
     }
@@ -54,25 +94,50 @@ const AuthManager = () => {
       try {
         switch (actionMode) {
           case 'resetPassword':
-            // Verify the password reset code and retrieve the associated email
-            const email = await verifyPasswordResetCode(auth, actionCode);
-            setEmail(email); // Pre-fill the email input field
+            try {
+              const email = await verifyPasswordResetCode(auth, actionCode);
+              setEmail(email);
+            } catch (err) {
+              setError(
+                err.message ||
+                  'Invalid or expired reset code. Please request a new one.'
+              );
+              handleErrorAction(
+                'Something went wrong. Try again',
+                'Get New Link',
+                reinitiatePasswordReset
+              );
+            }
             break;
           case 'verifyEmail':
-            await applyActionCode(auth, actionCode);
-            setVerificationStatus('Email verified successfully! Please login');
-
-            // Redirect to booking or home after successful verification
-            const redirectTo = localStorage.getItem('redirectTo') || '';
-            localStorage.removeItem('redirectTo');
-            setTimeout(() => {
-              router.push(
-                redirectTo ? `/login/redirectTo=${redirectTo}` : '/login'
+            try {
+              await applyActionCode(auth, actionCode);
+              setVerificationStatus(
+                'Email verified successfully! Please login'
               );
-            }, 2000);
+              handleSuccess('Email verified successfully! Please login');
+
+              const redirectTo = localStorage.getItem('redirectTo') || '';
+              localStorage.removeItem('redirectTo');
+              setTimeout(() => {
+                router.replace(
+                  redirectTo
+                    ? `/login?redirectTo=${encodeURIComponent(redirectUrl)}`
+                    : '/login'
+                );
+              }, 2000);
+            } catch (err) {
+              setError(
+                err.message ||
+                  'Invalid or expired verification code. Please try again.'
+              );
+              handleError('Something went wrong. Please try again');
+              router.replace('/');
+            }
             break;
           default:
-          // Error: invalid mode.
+            handleError('Invalid action mode. Redirecting...');
+            router.replace('/');
         }
       } catch (err) {
         setError(

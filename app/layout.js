@@ -2,6 +2,8 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthProvider';
 import { BookingProvider } from '@/context/BookingContext';
+import { ToastProvider } from '@/context/ToastContext';
+import Toast from '@/components/toast/Toast';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -25,13 +27,16 @@ const RootLayout = ({ children }) => {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <BookingProvider>
-            <div className="font-[family-name:var(--font-geist-sans)] font-medium">
-              {children}
-            </div>
-          </BookingProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <BookingProvider>
+              <div className="font-[family-name:var(--font-geist-sans)] font-medium">
+                {children}
+              </div>
+            </BookingProvider>
+          </AuthProvider>
+          <Toast />
+        </ToastProvider>
       </body>
     </html>
   );

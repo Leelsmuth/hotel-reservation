@@ -6,19 +6,25 @@ import Container from '@/components/layout/Container';
 import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useAuth } from '@/context/AuthProvider';
+import { useToast } from '@/context/ToastContext';
+import { sendEmailVerification } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const Login = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, loading, user } = useAuth();
+  const redirectTo = searchParams.get('redirectTo') || '/';
+  const { login, loading, user, logout } = useAuth();
+  const { showToast, removeToast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const redirectTo = searchParams.get('redirectTo') || '/';
+
+  const effectCalled = useRef(false);
+  const errorToastId = useRef(null);
 
   const handleSignin = async (event) => {
     event.preventDefault();
@@ -26,17 +32,66 @@ const Login = () => {
 
     try {
       await login(email, password);
-      router.push(redirectTo);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
+      handleError(err.message || 'Something went wrong. Please try again.');
     }
   };
 
   useEffect(() => {
-    if (user) {
+    if (effectCalled.current) return;
+    effectCalled.current = true;
+
+    if (user && user.emailVerified) {
+      handleSuccess('Login Successful!. Redirecting...');
       router.push(redirectTo);
+    } else if (user && !user.emailVerified) {
+      setError('Please verify your email before logging in.');
+      handleErrorAction();
+
+      // setTimeout(() => {
+      //   logout().then(() => {
+      //     console.log('Logged out, but keeping the toast open.');
+      //   });
+      // }, 2000);
     }
-  }, [user, router, redirectTo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, redirectTo, router]);
+
+  const handleSuccess = (message) => {
+    showToast(message, 'success', {
+      autoClose: true,
+    });
+  };
+
+  const handleError = (error) => {
+    showToast(error, 'error', {
+      autoClose: true,
+    });
+  };
+
+  const handleErrorAction = () => {
+    errorToastId.current = showToast(
+      'Please verify your email before logging in.',
+      'error',
+      {
+        action: () => resendVerification(),
+        actionLabel: 'Get new link',
+        autoClose: false,
+      }
+    );
+  };
+
+  const resendVerification = async () => {
+    await sendEmailVerification(user);
+    handleSuccess('Verification mail resent! Check inbox/junk');
+    logout();
+
+    if (errorToastId.current) {
+      removeToast(errorToastId.current);
+      errorToastId.current = null;
+    }
+  };
 
   return (
     <AuthLayout>

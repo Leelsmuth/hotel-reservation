@@ -58,7 +58,8 @@ export const AuthProvider = ({ children }) => {
 
     if (!user.emailVerified) {
       console.log('unverified');
-      throw new Error('Please verify your email before logging in.');
+      // throw new Error('Please verify your email before logging in.');
+      return null;
     }
 
     setUser(user);

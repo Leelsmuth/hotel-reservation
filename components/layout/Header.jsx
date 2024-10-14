@@ -2,10 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import StyledLink from '../ui/StyledLink';
 import Container from './Container';
 import { useAuth } from '@/context/AuthProvider';
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import NavLink from '../ui/NavLink';
 
@@ -18,6 +17,7 @@ const Header = () => {
   const handleSignOut = () => {
     logout();
     setShowAccountDropDown(false);
+    setShowMenu(false);
     router.push('/login');
   };
 
@@ -69,13 +69,41 @@ const Header = () => {
             <NavLink href="/about" onClick={() => setShowMenu(false)}>
               About
             </NavLink>
-            <Link
-              href="/login"
-              className="px-8 py-2 bg-alternate text-black hover:bg-black hover:text-alternate transition-colors hover:rounded-md"
-              onClick={() => setShowMenu(false)}
-            >
-              Login
-            </Link>
+            {!user ? (
+              <Link
+                href="/login"
+                className="px-8 py-2 bg-alternate text-black hover:bg-black hover:text-alternate transition-colors hover:rounded-md"
+                onClick={() => setShowMenu(false)}
+              >
+                Login
+              </Link>
+            ) : (
+              <div className="relative">
+                <button
+                  className="px-8 py-2 bg-alternate text-black hover:bg-black hover:text-alternate transition-colors hover:rounded-md"
+                  onClick={() => {
+                    setShowAccountDropDown(!showAccountDropDown);
+                    // setShowMenu(false);
+                  }}
+                >
+                  Hi {userData.fullName}
+                </button>
+                <div
+                  className={`flex flex-col text-center absolute bg-white w-full pt-4 *:py-3 transition-all duration-300 ${
+                    showAccountDropDown
+                      ? 'opacity-100 top-full'
+                      : 'opacity-0 top-0 -z-10'
+                  }`}
+                >
+                  <NavLink href="/profile" onClick={() => setShowMenu(false)}>
+                    Profile
+                  </NavLink>
+                  <button type="button" onClick={handleSignOut}>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
           </nav>
         </div>
       </Container>
