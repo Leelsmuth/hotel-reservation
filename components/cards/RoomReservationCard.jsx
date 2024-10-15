@@ -41,7 +41,7 @@ const RoomReservationCard = ({
           are well equipped with a private bathroom, flat screen TV, AC/heating
           unit, and a refrigerator.
         </p>
-        <div className="flex gap-6 my-8 flex-wrap">
+        <div className="flex gap-6 mt-8 mb-3 flex-wrap">
           <div>
             <Image
               src="/amenities/icons/ic_bedroom.svg"
@@ -82,6 +82,16 @@ const RoomReservationCard = ({
             />
             <div className="mt-3">TV</div>
           </div>
+        </div>
+        <div className="mb-8 flex gap-8 items-center">
+          <Image
+            src="/amenities/icons/ionic-md-person.svg"
+            alt=""
+            height={32}
+            width={28}
+            className="w-auto object-contain"
+          />
+          <div className="font-bold">Up to 4 guests</div>
         </div>
         <div className="inline-block  py-2 px-3 text-black bg-alternate border-black border group-hover:bg-black group-hover:text-alternate transition-colors rounded-xl">
           Reserve Now

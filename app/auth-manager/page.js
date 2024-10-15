@@ -149,6 +149,7 @@ const AuthManager = () => {
     };
 
     handleAction();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionMode, actionCode, router]);
 
   if (actionMode === '') {
