@@ -47,7 +47,6 @@ const ReservationConfirmation = () => {
   useEffect(() => {
     const resId = searchParams.get('resId');
     const bId = searchParams.get('bId');
-    console.log(bookingDetails);
 
     if (resId) {
       setReservationId(resId);

@@ -38,6 +38,7 @@ export async function GET(request) {
       return NextResponse.json(
         {
           message: 'No reservation found with the provided bookingId and email',
+          isEmpty: true,
         },
         { status: 404 }
       );
