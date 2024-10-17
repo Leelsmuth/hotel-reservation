@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import AltStyledButton from '../ui/AltStyledButton';
+import StyledButton from '../ui/StyledButton';
 
 const RoomReservationCard = ({
   imageName,
@@ -6,9 +8,10 @@ const RoomReservationCard = ({
   price,
   roomTypeId,
   reservationHandler,
+  showModal,
 }) => {
   return (
-    <div className="relative group overflow-hidden cursor-pointer grid grid-cols-1 md:grid-cols-2 shadow-md hover:shadow-lg rounded-e-3xl">
+    <div className="relative group overflow-hidden grid grid-cols-1 md:grid-cols-2 shadow-md hover:shadow-lg rounded-e-3xl">
       <div className="overflow-hidden relative md:static">
         <Image
           src={`/rooms/${imageName}.jpg`}
@@ -24,13 +27,13 @@ const RoomReservationCard = ({
           <div>{title}</div>
           <div className="uppercase font-bold">Reserve now</div>
         </div>
-        <button
+        {/* <button
           className="absolute inset-0"
           type="button"
           onClick={() => reservationHandler(roomTypeId)}
         >
           <span className="sr-only">View {title}</span>
-        </button>
+        </button> */}
       </div>
       <div className="px-4 py-8">
         <h2 className="text-2xl font-bold">{title}</h2>
@@ -93,9 +96,19 @@ const RoomReservationCard = ({
           />
           <div className="font-bold">Up to 4 guests</div>
         </div>
-        <div className="inline-block  py-2 px-3 text-black bg-alternate border-black border group-hover:bg-black group-hover:text-alternate transition-colors rounded-xl">
-          Reserve Now
+        <div className="flex gap-4">
+          <AltStyledButton
+            btnText="View Details"
+            clickHandler={() => showModal(true)}
+          />
+          <StyledButton
+            clickHandler={() => reservationHandler(roomTypeId)}
+            btnText="Reserve Now"
+          />
         </div>
+        {/* <div className="inline-block  py-2 px-3 text-black bg-alternate border-black border group-hover:bg-black group-hover:text-alternate transition-colors rounded-xl">
+          Reserve Now
+        </div> */}
       </div>
     </div>
   );

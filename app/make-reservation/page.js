@@ -14,6 +14,7 @@ import RoomReservationCard from '@/components/cards/RoomReservationCard';
 import HeadingOne from '@/components/typography/HeadingOne';
 import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import HeadingTwo from '@/components/typography/HeadingTwo';
+import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -32,6 +33,7 @@ const MakeReservation = () => {
   const [showingDates, setShowingDates] = useState('');
   const [reservationData, setReservationData] = useState(null);
   const [error, setError] = useState(null);
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
 
   const [showingRoom, setShowingRoom] = useState(ROOM_TYPES_IDS.EXECUTIVE);
   const [showingSection, setShowingSection] = useState(1);
@@ -50,6 +52,8 @@ const MakeReservation = () => {
   const contactName = useRef(null);
   const contactPhone = useRef(null);
   const contactEmail = useRef(null);
+
+  const openModal = (status) => setIsRoomModalOpen(status);
 
   const handleReservation = (roomTypeId) => {
     setShowingSection(2);
@@ -252,6 +256,7 @@ const MakeReservation = () => {
                       roomPath="presidential-suite"
                       title="Presidential Suite"
                       price="350"
+                      showModal={openModal}
                     />
                   )}
                   {availableRooms?.pSuite && (
@@ -262,6 +267,7 @@ const MakeReservation = () => {
                       roomPath="deluxe-room"
                       title="Deluxe Room"
                       price="150"
+                      showModal={openModal}
                     />
                   )}
                   {availableRooms?.dStandard && (
@@ -272,6 +278,7 @@ const MakeReservation = () => {
                       roomPath="king-room"
                       title="King Room"
                       price="135"
+                      showModal={openModal}
                     />
                   )}
                   {availableRooms?.sSuite && (
@@ -282,9 +289,14 @@ const MakeReservation = () => {
                       roomPath="queen-room"
                       title="Queen Room"
                       price="120"
+                      showModal={openModal}
                     />
                   )}
                 </div>
+                <RoomDetailsModal
+                  isOpen={isRoomModalOpen}
+                  onClose={() => setIsRoomModalOpen(false)}
+                />
               </div>
             ) : (
               <div className="text-2xl font-medium min-h-[50vw]">
