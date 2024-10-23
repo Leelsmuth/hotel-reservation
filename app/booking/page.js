@@ -30,72 +30,15 @@ const Booking = () => {
   const { user } = useAuth();
 
   const fetchReservation = async (reservationId) => {
-    // setLoading(true);
+    setLoading(true);
     setError(null);
-    setBookingDetails({
-      id: 'k6HPgYB12fKPnHMEglfh',
-      paymentDetails: {
-        paymentMode: 'PAYPAL',
-        currency: 'USD',
-        payerDetails: {
-          email_address: 'loadedclient@personal.example.com',
-          payer_id: 'ZQHKUUTJC5JS8',
-          name: {
-            given_name: 'Jonathan',
-            surname: 'Jinadu',
-          },
-          address: {
-            country_code: 'CA',
-          },
-        },
-        paymentStatus: 'COMPLETED',
-        amountPaid: '169.50',
-        paymentId: '0B984214VW926542C',
-        paidOn: '2024-10-03T14:34:16Z',
-        payInitiated: '2024-10-03T14:34:02Z',
-      },
-      nightsCount: 1,
-      isGuest: true,
-      bookingId: 'AZIOIRZGA1',
-      guestCount: '2',
-      discount: 0,
-      roomTypeId: 'dStandard',
-      checkOutDate: '2024-10-03T18:00:29.123Z',
-      guestDetails: [
-        {
-          name: 'Jonathan Lee',
-          age: '25',
-        },
-        {
-          age: '28',
-          name: 'Trish Lee',
-        },
-      ],
-      checkInDate: '2024-10-02T18:00:29.123Z',
-      roomId: '0CgKQ7NHaYh2yNRTN1rc',
-      subtotal: 150,
-      discountAmount: 0,
-      bookingStatus: 'reserved',
-      contactDetails: {
-        email: 'lori.sullivan0204@gmail.com',
-        phone: '08053529911',
-        name: 'Jonathan lee',
-      },
-      roomPrice: 150,
-      userId: null,
-      tax: 19.5,
-      bookingDates: {
-        bookedFrom: '2024-10-02',
-        bookedUntil: '2024-10-03',
-      },
-      totalPrice: 169.5,
-    });
-
-    return;
 
     try {
       const response = await fetch(`/api/rooms/booking?id=${reservationId}`);
-      if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+      if (!response.ok) {
+        setError(`Error: ${response.statusText}`);
+        return;
+      }
 
       const data = await response.json();
       setBookingDetails(data);
@@ -126,7 +69,9 @@ const Booking = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Error updating reservation: ${response.statusText}`);
+        alert('Oops! Something went wrong.');
+        return;
+        // throw new Error(`Error updating reservation: ${response.statusText}`);
       }
 
       const data = await response.json();

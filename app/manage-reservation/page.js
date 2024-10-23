@@ -45,69 +45,7 @@ const ManageReservation = () => {
   const closeModal = () => setIsModalOpen(false);
 
   const getReservationDetails = async (e) => {
-    // e.preventDefault();
-
-    setReservationDetails({
-      id: 'k6HPgYB12fKPnHMEglfh',
-      paymentDetails: {
-        paymentMode: 'PAYPAL',
-        currency: 'USD',
-        payerDetails: {
-          email_address: 'loadedclient@personal.example.com',
-          payer_id: 'ZQHKUUTJC5JS8',
-          name: {
-            given_name: 'Jonathan',
-            surname: 'Jinadu',
-          },
-          address: {
-            country_code: 'CA',
-          },
-        },
-        paymentStatus: 'COMPLETED',
-        amountPaid: '169.50',
-        paymentId: '0B984214VW926542C',
-        paidOn: '2024-10-03T14:34:16Z',
-        payInitiated: '2024-10-03T14:34:02Z',
-      },
-      nightsCount: 1,
-      isGuest: true,
-      bookingId: 'AZIOIRZGA1',
-      guestCount: '2',
-      discount: 0,
-      roomTypeId: 'dStandard',
-      checkOutDate: '2024-10-03T18:00:29.123Z',
-      guestDetails: [
-        {
-          name: 'Jonathan Lee',
-          age: '25',
-        },
-        {
-          age: '28',
-          name: 'Trish Lee',
-        },
-      ],
-      checkInDate: '2024-10-02T18:00:29.123Z',
-      roomId: '0CgKQ7NHaYh2yNRTN1rc',
-      subtotal: 150,
-      discountAmount: 0,
-      bookingStatus: RESERVATION_STATUS.CANCELLED,
-      contactDetails: {
-        email: 'lori.sullivan0204@gmail.com',
-        phone: '08053529911',
-        name: 'Jonathan lee',
-      },
-      roomPrice: 150,
-      userId: null,
-      tax: 19.5,
-      bookingDates: {
-        bookedFrom: '2024-10-02',
-        bookedUntil: '2024-10-03',
-      },
-      totalPrice: 169.5,
-    });
-    setIsFetching(false);
-
-    return;
+    e.preventDefault();
 
     try {
       setIsFetching(true);
@@ -127,7 +65,8 @@ const ManageReservation = () => {
           );
           return;
         }
-        throw new Error(`Error: ${response.statusText}`);
+        setError(`Error: ${response.statusText}`);
+        return;
       }
 
       const data = await response.json();
@@ -194,9 +133,8 @@ const ManageReservation = () => {
       });
 
       if (!response.ok) {
-        setError(response.email);
-
-        throw new Error(`Failed to cancel reservation: ${response.statusText}`);
+        setError(`Failed to cancel reservation: ${response.statusText}`);
+        return;
       }
 
       const data = await response.json();

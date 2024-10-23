@@ -48,12 +48,6 @@ const Login = () => {
     } else if (user && !user.emailVerified) {
       setError('Please verify your email before logging in.');
       handleErrorAction();
-
-      // setTimeout(() => {
-      //   logout().then(() => {
-      //     console.log('Logged out, but keeping the toast open.');
-      //   });
-      // }, 2000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, redirectTo, router]);

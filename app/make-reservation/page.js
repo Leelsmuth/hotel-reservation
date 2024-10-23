@@ -58,7 +58,11 @@ const MakeReservation = () => {
   const handleReservation = (roomTypeId) => {
     setShowingSection(2);
     setSelectedRoom(availableRooms[roomTypeId]);
-    updateRoomSelection(roomTypeId, availableRooms[roomTypeId].pathId);
+    updateRoomSelection(
+      roomTypeId,
+      availableRooms[roomTypeId].pathId,
+      availableRooms[roomTypeId].id
+    );
   };
 
   const submitReservation = async (e) => {
@@ -113,7 +117,8 @@ const MakeReservation = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to reserve room: ${response.statusText}`);
+        setError(`Failed to reserve room: ${response.statusText}`);
+        return;
       }
 
       const data = await response.json();
@@ -149,44 +154,6 @@ const MakeReservation = () => {
     const bookedFrom = format(checkInDate, 'yyyy-MM-dd');
     const bookedUntil = format(checkOutDate, 'yyyy-MM-dd');
 
-    setAvailableRooms({
-      eSuite: {
-        pathId: 'D22YVLBNizCrY9tsiM7i',
-        status: 'available',
-        price: 200,
-        typeId: 'eSuite',
-        bookings: [],
-        id: 5500,
-      },
-      pSuite: {
-        pathId: '7dfq3KNLhbtz9hPf8dfx',
-        price: 190,
-        bookings: [],
-        status: 'available',
-        id: 4300,
-        typeId: 'pSuite',
-      },
-      dStandard: {
-        pathId: '0CgKQ7NHaYh2yNRTN1rc',
-        bookings: [],
-        id: 3400,
-        status: 'available',
-        price: 150,
-        typeId: 'dStandard',
-      },
-      sSuite: {
-        pathId: '6q62jwiDelmGaBpcMzLw',
-        bookings: [],
-        price: 120,
-        status: 'available',
-        id: 1200,
-        typeId: 'sSuite',
-      },
-    });
-    setShowingDates(`${bookedFrom} to ${bookedUntil}`);
-    setIsFetchingRooms(false);
-    return;
-
     try {
       const res = await fetch(
         `/api/rooms/available?startDate=${bookedFrom}&endDate=${bookedUntil}`,
@@ -194,12 +161,12 @@ const MakeReservation = () => {
       );
 
       if (!res.ok) {
-        throw new Error(`Error fetching rooms: ${res.statusText}`);
+        setError(`Error fetching rooms: ${res.statusText}`);
+        return;
       }
 
       const data = await res.json();
       setAvailableRooms(data.availableRooms);
-      console.log(data.availableRooms);
       setShowingDates(`${bookedFrom} to ${bookedUntil}`);
       const firstAvailableRoom = Object.values(data.availableRooms).find(
         (room) => room !== null
@@ -215,7 +182,11 @@ const MakeReservation = () => {
   useEffect(() => {
     if (selectedRoom) {
       updateRoomPrice(selectedRoom.price);
-      updateRoomSelection(selectedRoom.typeId, selectedRoom.pathId);
+      updateRoomSelection(
+        selectedRoom.typeId,
+        selectedRoom.pathId,
+        selectedRoom.id
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoom]);

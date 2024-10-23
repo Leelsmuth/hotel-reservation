@@ -43,7 +43,6 @@ const PaymentElementForm = ({ onPaymentSuccess }) => {
     if (error) {
       setErrorMessage(error.message);
     } else {
-      console.log('Payment successful:', paymentIntent);
       onPaymentSuccess(paymentIntent);
     }
 

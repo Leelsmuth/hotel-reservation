@@ -15,6 +15,7 @@ export const BookingProvider = ({ children }) => {
     discountAmount: 0,
     roomTypeId: '',
     roomId: '',
+    roomNo: null,
     guestCount: 1,
     guestDetails: [],
     roomPrice: 0,
@@ -75,11 +76,12 @@ export const BookingProvider = ({ children }) => {
     }));
   };
 
-  const updateRoomSelection = (roomTypeId, roomId) => {
+  const updateRoomSelection = (roomTypeId, roomId, roomNo) => {
     setBookingDetails((prev) => ({
       ...prev,
       roomTypeId,
       roomId,
+      roomNo,
     }));
   };
 

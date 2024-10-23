@@ -21,7 +21,6 @@ const Gallery = ({ typeId }) => {
   );
 
   useEffect(() => {
-    console.log(typeId);
     setFirstImage(rooms[typeId]);
     setRemainingImgs(
       Object.entries(rooms)
