@@ -15,6 +15,7 @@ import HeadingOne from '@/components/typography/HeadingOne';
 import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import HeadingTwo from '@/components/typography/HeadingTwo';
 import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
+import OptionGenerator from '@/components/forms/OptionGenerator ';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -209,6 +210,13 @@ const MakeReservation = () => {
                 fetchAvailableRooms={fetchAvailableRooms}
               />
             </div>
+            {bookingDetails.guestCountActual > 4 && (
+              <div className="italic text-red-500 text-base">
+                The available rooms can't accommodate{' '}
+                {bookingDetails.guestCountActual} guests. Try booking more rooms
+                for your trip.
+              </div>
+            )}
             {!isFetchingRooms ? (
               <div className="min-h-[50vw]">
                 <HeadingOne>Now showing Available Rooms</HeadingOne>
@@ -379,13 +387,11 @@ const MakeReservation = () => {
                       <select
                         className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
                         value={bookingDetails.guestCount}
-                        onChange={(e) => updateGuestCount(e.target.value)}
+                        onChange={(e) =>
+                          updateGuestCount(e.target.value, guestCountActual)
+                        }
                       >
-                        {[1, 2, 3, 4].map((num) => (
-                          <option value={num} key={num}>
-                            {num}
-                          </option>
-                        ))}
+                        <OptionGenerator numOptions={4} />
                       </select>
                     </div>
                   </div>

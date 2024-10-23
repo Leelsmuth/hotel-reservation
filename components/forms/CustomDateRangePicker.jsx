@@ -8,6 +8,7 @@ import format from 'date-fns/format';
 import addDays from 'date-fns/addDays';
 import { useBooking } from '@/context/BookingContext';
 import StyledButton from '../ui/StyledButton';
+import OptionGenerator from './OptionGenerator ';
 
 const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
   const { bookingDetails, updateGuestCount, updateDates } = useBooking();
@@ -29,6 +30,8 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
     updateDates(dateRange[0].startDate, dateRange[0].endDate);
     setTimeout(() => {
       fetchAvailableRooms(dateRange[0].startDate, dateRange[0].endDate);
+      const newCount = guestCount > 4 ? 4 : guestCount;
+      updateGuestCount(newCount, guestCount);
     }, 300);
   };
 
@@ -45,7 +48,7 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
       updateDates(dateRange[0].startDate, dateRange[0].endDate);
     }
 
-    setGuestCount(bookingDetails.guestCount);
+    setGuestCount(bookingDetails.guestCountActual);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -107,15 +110,13 @@ const CustomDateRangePicker = ({ fetchAvailableRooms }) => {
           className="p-2 w-full rounded-xl border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500"
           value={guestCount}
           onChange={(e) => {
-            setGuestCount(e.target.value);
-            updateGuestCount(e.target.value);
+            const value = parseInt(e.target.value, 10);
+            // const newCount = value > 4 ? 4 : value;
+            setGuestCount(value);
+            // updateGuestCount(newCount, value);
           }}
         >
-          {[1, 2, 3, 4].map((num) => (
-            <option value={num} key={num}>
-              {num}
-            </option>
-          ))}
+          <OptionGenerator numOptions={30} />
         </select>
       </div>
       <StyledButton btnText="Check Availability" clickHandler={updateParams} />
