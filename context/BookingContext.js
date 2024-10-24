@@ -1,8 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import differenceInCalendarDays from 'date-fns/differenceInCalendarDays';
-import { DISCOUNT } from '@/lib/static/roomLegend';
+import { db } from '@/lib/firebase/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+// import { DISCOUNT } from '@/lib/static/roomLegend';
 
 const BookingContext = createContext();
 
@@ -30,7 +32,32 @@ export const BookingProvider = ({ children }) => {
     contactDetails: { fullName: '', email: '', phone: '' },
   });
 
+  const [discounts, setDiscounts] = useState({
+    ELEVEN: 0,
+    TWENTYONE: 0,
+    THIRTYPLUS: 0,
+  });
+
   const TAX_PERCENTAGE = 13;
+
+  useEffect(() => {
+    const discountDocRef = doc(db, 'discounts', 'daysDiscount');
+
+    const unsubscribe = onSnapshot(discountDocRef, (doc) => {
+      if (doc.exists()) {
+        const discountData = doc.data();
+        setDiscounts({
+          ELEVEN: discountData.ELEVEN || 0,
+          TWENTYONE: discountData.TWENTYONE || 0,
+          THIRTYPLUS: discountData.THIRTYPLUS || 0,
+        });
+      } else {
+        console.error('No discount data found');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const updateRoomPrice = (roomPrice) => {
     const roundToTwoDecimals = (num) => Math.round(num * 100) / 100;
@@ -61,11 +88,11 @@ export const BookingProvider = ({ children }) => {
     let applicableDiscount = 0;
 
     if (numOfNights > 30) {
-      applicableDiscount = DISCOUNT.THIRTYPLUS;
+      applicableDiscount = discounts.THIRTYPLUS;
     } else if (numOfNights > 20) {
-      applicableDiscount = DISCOUNT.TWENTYONE;
+      applicableDiscount = discounts.TWENTYONE;
     } else if (numOfNights > 10) {
-      applicableDiscount = DISCOUNT.ELEVEN;
+      applicableDiscount = discounts.ELEVEN;
     }
 
     setBookingDetails((prev) => ({
