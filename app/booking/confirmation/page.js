@@ -27,8 +27,8 @@ const BookingConfirmation = () => {
         </div>
         <p>
           A confirmation email will be sent to you shortly your Booking ID:{' '}
-          {reservationCode}. Please note that you will not be eligible for a
-          refund if you cancel your booking after 48 hours.
+          {reservationCode}. Please note that Booking cancellation attracts a
+          penalty charge of 30% of initial booking cost.
         </p>
         <div className="flex flex-col text-center gap-6 mt-6">
           <StyledLink linkText="Return to Homepage" path="/" />
