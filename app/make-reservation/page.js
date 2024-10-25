@@ -16,6 +16,7 @@ import RoomHomeCard from '@/components/cards/RoomHomeCard';
 import HeadingTwo from '@/components/typography/HeadingTwo';
 import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
 import OptionGenerator from '@/components/forms/OptionGenerator ';
+import { useAuth } from '@/context/AuthProvider';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -27,8 +28,10 @@ const MakeReservation = () => {
     updateContactDetails,
     updateGuestDetails,
     updateBooking,
-    resetBookingDetails,
+    updateIsGuest,
+    updateUserId,
   } = useBooking();
+  const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showingDates, setShowingDates] = useState('');
@@ -64,6 +67,10 @@ const MakeReservation = () => {
       availableRooms[roomTypeId].pathId,
       availableRooms[roomTypeId].id
     );
+    if (user) {
+      updateIsGuest(false);
+      updateUserId(user.uid);
+    }
   };
 
   const submitReservation = async (e) => {
@@ -212,7 +219,7 @@ const MakeReservation = () => {
             </div>
             {bookingDetails.guestCountActual > 4 && (
               <div className="italic text-red-500 text-base">
-                The available rooms can't accommodate{' '}
+                The available rooms cannot accommodate{' '}
                 {bookingDetails.guestCountActual} guests. Try booking more rooms
                 for your trip.
               </div>

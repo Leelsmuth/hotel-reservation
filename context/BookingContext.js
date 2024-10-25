@@ -87,7 +87,7 @@ export const BookingProvider = ({ children }) => {
     const numOfNights = differenceInCalendarDays(checkOutDate, checkInDate);
     let applicableDiscount = 0;
 
-    if (numOfNights > 30) {
+    if (numOfNights >= 30) {
       applicableDiscount = discounts.THIRTYPLUS;
     } else if (numOfNights > 20) {
       applicableDiscount = discounts.TWENTYONE;

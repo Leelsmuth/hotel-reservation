@@ -58,6 +58,8 @@ const Booking = () => {
         paymentAmount: paymentIntent.amount,
       },
       bookingStatus: RESERVATION_STATUS.BOOKED,
+      isGuest: user ? false : true,
+      userId: user ? user.uid : null,
     };
 
     setIsSubmitting(true);
@@ -98,6 +100,7 @@ const Booking = () => {
       updateIsGuest(false);
       updateUserId(user.uid);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // TODO: re-route all transations that have a booking status other then 'reserved'
