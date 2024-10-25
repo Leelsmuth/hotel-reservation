@@ -6,6 +6,7 @@ import HeadingOne from '@/components/typography/HeadingOne';
 import AltStyledButton from '@/components/ui/AltStyledButton';
 import AltStyledLink from '@/components/ui/AltStyledLink';
 import StyledButton from '@/components/ui/StyledButton';
+import StyledLink from '@/components/ui/StyledLink';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -57,6 +58,9 @@ const ReservationConfirmation = () => {
   }, [searchParams]);
   return (
     <Container classes="my-10">
+      <div className="text-right mt-14 mb-20">
+        <StyledLink linkText="New Reservation" path="/make-reservation" />
+      </div>
       <div className="max-w-[500px] p-4 md:p-8 mx-auto shadow-2xl">
         <HeadingOne classes="text-center mb-8">
           Reservation Successful!

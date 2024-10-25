@@ -30,6 +30,7 @@ const MakeReservation = () => {
     updateBooking,
     updateIsGuest,
     updateUserId,
+    resetBookingDetails,
   } = useBooking();
   const { user } = useAuth();
 
@@ -131,7 +132,6 @@ const MakeReservation = () => {
 
       const data = await response.json();
       setReservationData(data);
-      setShowingSection(1);
 
       await fetch('/api/send-confirmation-email/reservation', {
         method: 'POST',
@@ -140,15 +140,16 @@ const MakeReservation = () => {
         },
         body: JSON.stringify({
           recipient: details.contactDetails.email,
-          details,
+          bookingDetails: details,
         }),
       });
+      // setShowingSection(1);
 
       router.push(
         `/make-reservation/confirmation?resId=${data.reservationId}&bId=${data.bookingId}`
       );
       updateBooking(details);
-      // resetBookingDetails();
+      resetBookingDetails();
     } catch (error) {
       setError(error.message);
       console.error('Error during reservation:', error);

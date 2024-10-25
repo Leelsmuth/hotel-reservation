@@ -147,14 +147,10 @@ const ManageReservation = () => {
     }
   };
 
-  useEffect(() => {
-    getReservationDetails();
-  }, []);
-
   return (
     <Container classes="min-h-[70vh]">
       <div className="text-right mt-14 mb-20">
-        <StyledLink linkText="New Reservation" path="make-reservation" />
+        <StyledLink linkText="New Reservation" path="/make-reservation" />
       </div>
       <HeadingOne classes="text-center mb-3 uppercase mt-8">
         Find Your reservation
