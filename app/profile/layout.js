@@ -47,9 +47,9 @@ const PageLayout = ({ children }) => {
             <li>
               <NavLink href="/profile/bookings">Active Bookings</NavLink>
             </li>
-            <li>
+            {/* <li>
               <NavLink href="/profile/change-password">Change Password</NavLink>
-            </li>
+            </li> */}
             <li>
               <button
                 type="button"

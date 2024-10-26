@@ -1,5 +1,115 @@
+'use client';
+
+import Spinner from '@/components/anim/Spinner';
+import ProfileReservationCard from '@/components/cards/ProfileReservationCard';
+import { useAuth } from '@/context/AuthProvider';
+import { RESERVATION_STATUS } from '@/lib/static/roomLegend';
+import { useRouter } from 'next/navigation';
+import { Fragment, useEffect, useState } from 'react';
+
 const ProfileReservations = () => {
-  return <div>ProfileReservations</div>;
+  const router = useRouter();
+  const { user } = useAuth();
+  const [reservations, setReservations] = useState([]);
+  const [isFetching, setIsFetching] = useState(true);
+  const [showSpinner, setShowSpinner] = useState(false);
+
+  const bookingHandler = (reservationDetails) => {
+    router.replace(
+      `/booking?resId=${reservationDetails.id}&bId=${reservationDetails.bookingId}`
+    );
+  };
+
+  const cancelReservation = async (reservationDetails) => {
+    setShowSpinner(true);
+
+    try {
+      const response = await fetch('/api/rooms/cancel-reservation', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reservationId: reservationDetails.id,
+          roomId: reservationDetails.roomId,
+          bookedFrom: reservationDetails.bookingDates.bookedFrom,
+          bookedUntil: reservationDetails.bookingDates.bookedUntil,
+        }),
+      });
+
+      if (!response.ok) {
+        alert(`Failed to cancel reservation: ${response.statusText}`);
+        return;
+      }
+
+      const data = await response.json();
+      alert(data.message);
+      getReservations();
+    } catch (error) {
+      console.error(error.message);
+    } finally {
+      setShowSpinner(false);
+    }
+  };
+
+  const getReservations = async () => {
+    try {
+      setIsFetching(true);
+      const response = await fetch(
+        `/api/rooms/reserve/profile?bookingStatus=${RESERVATION_STATUS.RESERVED}&userId=${user.uid}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`Error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setReservations(data.reservations);
+      setIsFetching(false);
+    } catch (error) {
+      console.error('Failed to fetch reservations:', error);
+      setIsFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    getReservations();
+  }, []);
+
+  return (
+    <Fragment>
+      {!isFetching && (
+        <>
+          {reservations.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {reservations.map((reservation) => (
+                <ProfileReservationCard
+                  key={reservation.id}
+                  res={reservation}
+                  bookingHandler={bookingHandler}
+                  cancelReservation={cancelReservation}
+                />
+              ))}
+            </div>
+          ) : (
+            <div>No reservation found.</div>
+          )}
+        </>
+      )}
+      {(isFetching || showSpinner) && (
+        <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
+          <Spinner
+            spinnerColor="text-primary"
+            spinnerHeight="h-1/5"
+            spinnerWidth="w-1/5"
+          />
+        </div>
+      )}
+    </Fragment>
+  );
 };
 
 export default ProfileReservations;
