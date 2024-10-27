@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import differenceInCalendarDays from 'date-fns/differenceInCalendarDays';
+import addDays from 'date-fns/addDays';
 import { db } from '@/lib/firebase/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 // import { DISCOUNT } from '@/lib/static/roomLegend';
@@ -10,8 +11,8 @@ const BookingContext = createContext();
 
 export const BookingProvider = ({ children }) => {
   const [bookingDetails, setBookingDetails] = useState({
-    checkInDate: null,
-    checkOutDate: null,
+    checkInDate: new Date(),
+    checkOutDate: addDays(new Date(), 1),
     nightsCount: 1,
     discount: 0,
     discountAmount: 0,

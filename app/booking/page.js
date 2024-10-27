@@ -26,7 +26,8 @@ const Booking = () => {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { updateBooking, updateIsGuest, updateUserId } = useBooking();
+  const { updateBooking, updateIsGuest, updateUserId, resetBookingDetails } =
+    useBooking();
   const { user } = useAuth();
 
   const fetchReservation = async (reservationId) => {
@@ -101,6 +102,7 @@ const Booking = () => {
       });
 
       router.replace(`/booking/confirmation?bId=${data.bookingId}`);
+      resetBookingDetails();
     } catch (error) {
       console.error('Error:', error);
     }
