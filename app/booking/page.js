@@ -36,11 +36,22 @@ const Booking = () => {
     try {
       const response = await fetch(`/api/rooms/booking?id=${reservationId}`);
       if (!response.ok) {
+        if (response.status === 404) {
+          setBookingDetails(null);
+          setLoading(false);
+          router.replace('/');
+          return;
+        }
         setError(`Error: ${response.statusText}`);
         return;
       }
 
       const data = await response.json();
+      if (data.bookingStatus !== RESERVATION_STATUS.RESERVED) {
+        setLoading(false);
+        router.replace('/');
+        return;
+      }
       setBookingDetails(data);
       updateBooking(data);
     } catch (err) {
