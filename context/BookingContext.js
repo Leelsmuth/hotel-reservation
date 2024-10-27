@@ -30,6 +30,8 @@ export const BookingProvider = ({ children }) => {
     isGuest: true,
     bookingStatus: 'reserved',
     userId: null,
+    checkedInBy: null,
+    checkedOutBy: null,
     contactDetails: { fullName: '', email: '', phone: '' },
   });
 

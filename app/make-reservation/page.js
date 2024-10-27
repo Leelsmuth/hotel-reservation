@@ -396,7 +396,10 @@ const MakeReservation = () => {
                         className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
                         value={bookingDetails.guestCount}
                         onChange={(e) =>
-                          updateGuestCount(e.target.value, guestCountActual)
+                          updateGuestCount(
+                            e.target.value,
+                            bookingDetails.guestCountActual
+                          )
                         }
                       >
                         <OptionGenerator numOptions={4} />
