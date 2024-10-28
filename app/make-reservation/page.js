@@ -17,6 +17,9 @@ import HeadingTwo from '@/components/typography/HeadingTwo';
 import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
 import OptionGenerator from '@/components/forms/OptionGenerator ';
 import { useAuth } from '@/context/AuthProvider';
+import 'react-phone-number-input/style.css';
+import PhoneInput from 'react-phone-number-input';
+import { validatePhoneNumber } from '@/lib/helpers/validatePhoneNumber';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -44,7 +47,7 @@ const MakeReservation = () => {
   const [showingSection, setShowingSection] = useState(1);
   const [availableRooms, setAvailableRooms] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [isFetchingRooms, setIsFetchingRooms] = useState(true);
+  const [isFetchingRooms, setIsFetchingRooms] = useState(false);
   const [guestNameOne, setGuestNameOne] = useState('');
   const [guestAgeOne, setGuestAgeOne] = useState('');
   const [guestNameTwo, setGuestNameTwo] = useState('');
@@ -54,8 +57,11 @@ const MakeReservation = () => {
   const [guestNameFour, setGuestNameFour] = useState('');
   const [guestAgeFour, setGuestAgeFour] = useState('');
 
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
   const contactName = useRef(null);
-  const contactPhone = useRef(null);
+  // const contactPhone = useRef(null);
   const contactEmail = useRef(null);
 
   const openModal = (status) => setIsRoomModalOpen(status);
@@ -79,7 +85,8 @@ const MakeReservation = () => {
     const contactDetails = {
       name: contactName.current.value.trim(),
       email: contactEmail.current.value.trim(),
-      phone: contactPhone.current.value.trim(),
+      // phone: contactPhone.current.value.trim(),
+      phone: phoneNumber,
     };
 
     if (
@@ -87,10 +94,18 @@ const MakeReservation = () => {
       !contactDetails.email ||
       !contactDetails.phone
     ) {
-      alert('Contact details is required');
+      alert('All contact details are required');
       return;
     }
 
+    if (!validatePhoneNumber(contactDetails.phone)) {
+      setPhoneError(
+        'Please enter a valid phone number. US/Canada numbers must be 10 digits.'
+      );
+      return;
+    }
+
+    setPhoneError('');
     updateContactDetails(contactDetails);
 
     const guestDetails = [
@@ -430,7 +445,7 @@ const MakeReservation = () => {
                           required
                         />
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="block font-bold">Phone Number</label>
                         <input
                           className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
@@ -438,6 +453,24 @@ const MakeReservation = () => {
                           ref={contactPhone}
                           required
                         />
+                      </div> */}
+                      <div>
+                        <label className="block font-bold">Phone Number</label>
+                        <PhoneInput
+                          international
+                          defaultCountry="CA"
+                          value={phoneNumber}
+                          onChange={(value) => {
+                            setPhoneNumber(value);
+                            setPhoneError('');
+                          }}
+                          className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
+                        />
+                        {phoneError && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {phoneError}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="*:w-full">

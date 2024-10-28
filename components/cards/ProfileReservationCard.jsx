@@ -1,4 +1,4 @@
-import { RESERVATION_STATUS } from '@/lib/static/roomLegend';
+import { RESERVATION_STATUS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
 import StyledButton from '../ui/StyledButton';
 import AltStyledButton from '../ui/AltStyledButton';
 import { Fragment, useState } from 'react';
@@ -33,7 +33,7 @@ const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
         <div>
           Room Type:{' '}
           <span className="text-xl font-bold">
-            {res.bookingDates.bookedUntil}
+            {ROOM_TYPES_NAMES[res.roomTypeId]}
           </span>
         </div>
         {res.bookingStatus === RESERVATION_STATUS.RESERVED && (

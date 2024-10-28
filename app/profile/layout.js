@@ -35,7 +35,7 @@ const PageLayout = ({ children }) => {
     <MainLayout>
       <Container>
         <div className="flex flex-col sm:flex-row gap-6 mt-10">
-          <ul className="sm:w-[250px] grid grid-cols-2 sm:grid-cols-1 *:text-sm *:sm:text-lg">
+          <ul className="sm:w-[250px] grid sm:block grid-cols-2 *:text-sm *:sm:text-lg">
             <li>
               <NavLink href="/profile">Dashboard</NavLink>
             </li>
