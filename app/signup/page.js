@@ -5,29 +5,61 @@ import AuthLayout from '@/components/layout/AuthLayout';
 import Container from '@/components/layout/Container';
 import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
+import { useToast } from '@/context/ToastContext';
+import { passwordSecurityCheck } from '@/lib/helpers/passwordSecurityCheck ';
+import { validatePhoneNumber } from '@/lib/helpers/validatePhoneNumber';
+import { handleError } from '@/lib/toast/handleError';
+import { handleSuccess } from '@/lib/toast/handleSuccess';
 import { sendEmailVerification } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import 'react-phone-number-input/style.css';
+import PhoneInput from 'react-phone-number-input';
+import BasicModal from '@/components/toast/BasicModal';
 
 const SignUp = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/';
+  const { showToast } = useToast();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('Canada');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSignup = async (event) => {
     event.preventDefault();
     setError('');
-    setLoading(true);
 
+    if (!fullName.trim() || !email.trim() || !phoneNumber || !password.trim()) {
+      handleError(showToast, 'All fields are required');
+      return;
+    }
+
+    if (!passwordSecurityCheck(password.trim())) {
+      handleError(
+        showToast,
+        'Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, and a number.'
+      );
+      return;
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+      setPhoneError(
+        'Please enter a valid phone number. US/Canada numbers must be 10 digits.'
+      );
+      return;
+    }
+
+    setPhoneError('');
+    setLoading(true);
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -38,7 +70,7 @@ const SignUp = () => {
           fullName: fullName.trim(),
           email: email.trim(),
           password: password.trim(),
-          phone: phone.trim(),
+          phone: phoneNumber,
           country: country.trim(),
         }),
       });
@@ -47,7 +79,10 @@ const SignUp = () => {
 
       if (response.ok) {
         await sendEmailVerification(data.user);
-        alert('Signup successful! Verification email has been sent');
+        handleSuccess(
+          showToast,
+          'Signup successful! Verification email has been sent'
+        );
         localStorage.setItem('redirectTo', redirectTo);
         router.push('/');
       } else {
@@ -85,14 +120,20 @@ const SignUp = () => {
             />
           </div>
           <div className="mb-8">
-            <label className="block">Phone No</label>
-            <input
-              type="text"
+            <label className="block font-bold">Phone Number</label>
+            <PhoneInput
+              international
+              defaultCountry="CA"
+              value={phoneNumber}
+              onChange={(value) => {
+                setPhoneNumber(value);
+                setPhoneError('');
+              }}
               className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
             />
+            {phoneError && (
+              <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+            )}
           </div>
           <div className="mb-8">
             <label className="block">Country</label>
@@ -416,7 +457,14 @@ const SignUp = () => {
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div className="mb-1 text-base text-center">
             By signing up you agree to our{' '}
-            <span class="text-primary">terms and conditions</span>.
+            <button
+              type="button"
+              className="text-primary"
+              onClick={() => setIsModalOpen(true)}
+            >
+              terms and conditions
+            </button>
+            .
           </div>
           <div className="*:w-full">
             <StyledButton btnText="Register" isSubmitBtn={true} />
@@ -437,6 +485,65 @@ const SignUp = () => {
           </div>
         )}
       </Container>
+      <BasicModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        closeOnOverlayClick={true}
+        title="Terms & Conditions"
+      >
+        <div className="mb-5">
+          <div>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Amet
+              provident consequuntur, rem impedit sequi magni, officia
+              necessitatibus odio sint nam ipsa aperiam voluptas nesciunt
+              expedita omnis quia eius nulla. Deserunt!
+            </p>
+          </div>
+        </div>
+      </BasicModal>
     </AuthLayout>
   );
 };

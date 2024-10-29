@@ -3,13 +3,17 @@
 import Spinner from '@/components/anim/Spinner';
 import ProfileReservationCard from '@/components/cards/ProfileReservationCard';
 import { useAuth } from '@/context/AuthProvider';
+import { useToast } from '@/context/ToastContext';
 import { RESERVATION_STATUS } from '@/lib/static/roomLegend';
+import { handleError } from '@/lib/toast/handleError';
+import { handleSuccess } from '@/lib/toast/handleSuccess';
 import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 
 const ProfileBookings = () => {
   const router = useRouter();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [reservations, setReservations] = useState([]);
   const [isFetching, setIsFetching] = useState(true);
   const [showSpinner, setShowSpinner] = useState(false);
@@ -32,12 +36,15 @@ const ProfileBookings = () => {
       });
 
       if (!response.ok) {
-        alert(`Failed to cancel booking: ${response.statusText}`);
+        handleError(
+          showToast,
+          `Failed to cancel booking: ${response.statusText}`
+        );
         return;
       }
 
       const data = await response.json();
-      alert(data.message);
+      handleSuccess(showToast, data.message);
       getReservations();
     } catch (error) {
       console.error(error.message);

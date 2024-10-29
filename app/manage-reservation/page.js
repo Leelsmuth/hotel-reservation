@@ -12,11 +12,14 @@ import StyledButton from '@/components/ui/StyledButton';
 import StyledLink from '@/components/ui/StyledLink';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
+import { useToast } from '@/context/ToastContext';
 import {
   RESERVATION_STATUS,
   ROOM_MAIN_PICTURES,
   ROOM_TYPES_NAMES,
 } from '@/lib/static/roomLegend';
+import { handleError } from '@/lib/toast/handleError';
+import { handleSuccess } from '@/lib/toast/handleSuccess';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Fragment, useRef, useState, useEffect } from 'react';
@@ -25,6 +28,7 @@ const ManageReservation = () => {
   const router = useRouter();
   const { updateIsGuest, updateUserId } = useBooking();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [isFetching, setIsFetching] = useState(null);
   const [reservationDetails, setReservationDetails] = useState(null);
@@ -134,11 +138,15 @@ const ManageReservation = () => {
 
       if (!response.ok) {
         setError(`Failed to cancel reservation: ${response.statusText}`);
+        handleError(
+          showToast,
+          `Failed to cancel reservation: ${response.statusText}`
+        );
         return;
       }
 
       const data = await response.json();
-      alert(data.message);
+      handleSuccess(showToast, data.message);
       router.push('/');
     } catch (error) {
       setError(error.message);

@@ -6,12 +6,15 @@ import Container from '@/components/layout/Container';
 import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useAuth } from '@/context/AuthProvider';
+import { useToast } from '@/context/ToastContext';
+import { handleSuccess } from '@/lib/toast/handleSuccess';
 import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 
 const ResetPassword = () => {
   const router = useRouter();
   const { initiatePasswordReset, loading, user } = useAuth();
+  const { showToast } = useToast();
 
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +30,10 @@ const ResetPassword = () => {
       setMessage(
         'Password reset email has been sent. Please check your inbox.'
       );
-      alert('Password reset email has been sent. Please check your inbox.');
+      handleSuccess(
+        showToast,
+        'Password reset email has been sent. Please check your inbox.'
+      );
       router.push('login');
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');

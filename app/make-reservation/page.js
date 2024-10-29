@@ -20,6 +20,8 @@ import { useAuth } from '@/context/AuthProvider';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
 import { validatePhoneNumber } from '@/lib/helpers/validatePhoneNumber';
+import { useToast } from '@/context/ToastContext';
+import { handleError } from '@/lib/toast/handleError';
 
 const MakeReservation = () => {
   const router = useRouter();
@@ -36,6 +38,7 @@ const MakeReservation = () => {
     resetBookingDetails,
   } = useBooking();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showingDates, setShowingDates] = useState('');
@@ -94,7 +97,7 @@ const MakeReservation = () => {
       !contactDetails.email ||
       !contactDetails.phone
     ) {
-      alert('All contact details are required');
+      handleError(showToast, 'All contact details are required');
       return;
     }
 

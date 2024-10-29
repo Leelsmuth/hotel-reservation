@@ -7,11 +7,13 @@ import StripeCheckout from '@/components/payment/StripeCheckout';
 import HeadingOne from '@/components/typography/HeadingOne';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
+import { useToast } from '@/context/ToastContext';
 import {
   RESERVATION_STATUS,
   ROOM_MAIN_PICTURES,
   ROOM_TYPES_NAMES,
 } from '@/lib/static/roomLegend';
+import { handleError } from '@/lib/toast/handleError';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
@@ -29,6 +31,7 @@ const Booking = () => {
   const { updateBooking, updateIsGuest, updateUserId, resetBookingDetails } =
     useBooking();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const fetchReservation = async (reservationId) => {
     setLoading(true);
@@ -83,7 +86,7 @@ const Booking = () => {
       });
 
       if (!response.ok) {
-        alert('Oops! Something went wrong.');
+        handleError(showToast, 'Oops! Something went wrong.');
         return;
         // throw new Error(`Error updating reservation: ${response.statusText}`);
       }
