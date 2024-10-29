@@ -146,6 +146,31 @@ const ManageReservation = () => {
       }
 
       const data = await response.json();
+
+      if (isBooking) {
+        await fetch('/api/send-confirmation-email/booking/cancel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipient: reservationDetails.contactDetails.email,
+            bookingDetails: reservationDetails,
+          }),
+        });
+      } else {
+        await fetch('/api/send-confirmation-email/reservation/cancel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipient: reservationDetails.contactDetails.email,
+            bookingDetails: reservationDetails,
+          }),
+        });
+      }
+
       handleSuccess(showToast, data.message);
       router.push('/');
     } catch (error) {
@@ -310,12 +335,18 @@ const ManageReservation = () => {
                 </div>
                 <div className="mb-10 text-black">
                   <h4 className="font-semibold">Cancel Policy</h4>
-                  <p className="text-xl">
+                  {/* <p className="text-xl">
                     Customers can only reserve a room for 1hr with their email
                     address, or else they will forfeit the room. The hotel will
                     offer free cancellation up to 48 hours before check- in
                     otherwise a penalty charge of 30% on initial booking cost
                     will be applied.
+                  </p> */}
+                  <p className="text-xl">
+                    Customers can only reserve a room for 1hr with their email
+                    address, or else they will forfeit the room. All bookings
+                    are final. Booking cancellation shall attract penalty charge
+                    of 30% on initial booking cost.
                   </p>
                 </div>
                 <div>
@@ -420,6 +451,7 @@ const ManageReservation = () => {
               onClose={closeModal}
               onConfirm={cancelReservation}
               isBooking={isBooking}
+              price={reservationDetails.totalPrice}
             />
           </div>
         </Container>

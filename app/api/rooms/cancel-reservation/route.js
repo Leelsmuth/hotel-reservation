@@ -43,7 +43,7 @@ export async function PATCH(request) {
     });
 
     return NextResponse.json({
-      message: `Reservation ${reservationId} cancelled successfully.`,
+      message: `Reservation cancelled successfully.`,
       messageFull: `Reservation ${reservationId} cancelled successfully, and room ${roomId} updated.`,
     });
   } catch (error) {

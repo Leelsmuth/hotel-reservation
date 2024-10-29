@@ -2,7 +2,7 @@ const ConfirmationModal = ({
   isOpen,
   onClose,
   onConfirm,
-  message,
+  price,
   isBooking = true,
 }) => {
   if (!isOpen) return null;
@@ -13,7 +13,9 @@ const ConfirmationModal = ({
         <h2 className="text-lg font-semibold mb-4">Confirm Action</h2>
         <p className="mb-6">
           {isBooking
-            ? 'Are you sure you want to cancel this reservation? A 30% fine will be applied'
+            ? `Are you sure you want to cancel this reservation? A 30% fine will be applied. Only $${(
+                0.7 * price
+              ).toFixed(2)} will be refunded.`
             : 'Are you sure you want to cancel this reservation? This action cannot be reversed'}
         </p>
         <div className="flex justify-end gap-4">
