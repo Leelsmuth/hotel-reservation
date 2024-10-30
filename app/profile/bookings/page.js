@@ -65,6 +65,7 @@ const ProfileBookings = () => {
 
       if (!response.ok) {
         console.error(`Error: ${response.statusText}`);
+        return;
       }
 
       const data = await response.json();
@@ -72,6 +73,8 @@ const ProfileBookings = () => {
       setIsFetching(false);
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
+      setIsFetching(false);
+    } finally {
       setIsFetching(false);
     }
   };
