@@ -30,9 +30,9 @@ const Footer = () => {
               </div>
             </div>
             <div>
-              <div>Phone number: 4371987611</div>
-              <div>Email: sample@beverlyhill.ca</div>
-              <div>Address: 123, Hotel Ave Toronto,ON M1A 2B3</div>
+              <div>Phone number: 555555555</div>
+              <div>Email: example@email.ca</div>
+              <div>Address: 123, Hotel Ave Toronto,ON</div>
             </div>
           </div>
           <hr />
