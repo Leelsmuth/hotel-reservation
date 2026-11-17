@@ -22,7 +22,7 @@ const ReservationConfirmation = () => {
     updateIsGuest,
     updateUserId,
   } = useBooking();
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
 
   const [reservationId, setReservationId] = useState('');
   const [bookingId, setBookingId] = useState('');
@@ -75,7 +75,7 @@ const ReservationConfirmation = () => {
         </p>
         <div className="flex flex-col text-center gap-6 mt-6">
           <AltStyledLink linkText="Return to Homepage" path="/" />
-          {user ? (
+          {initializing ? null : user ? (
             <StyledButton
               btnText="Proceed to Booking"
               clickHandler={bookingHandler}

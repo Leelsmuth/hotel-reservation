@@ -1,6 +1,14 @@
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
+import { USE_MOCKS } from '@/lib/config/mockMode';
+import MockPayPalButton from './MockPayPalButton';
 
 const PayPalButton = ({ amount, onSuccess, onError }) => {
+  if (USE_MOCKS) {
+    return (
+      <MockPayPalButton amount={amount} onSuccess={onSuccess} onError={onError} />
+    );
+  }
+
   return (
     <PayPalScriptProvider
       options={{ 'client-id': process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}

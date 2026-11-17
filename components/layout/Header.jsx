@@ -10,7 +10,7 @@ import NavLink from '../ui/NavLink';
 
 const Header = () => {
   const router = useRouter();
-  const { logout, user, userData } = useAuth();
+  const { logout, user, userData, initializing } = useAuth();
   const [showAccountDropDown, setShowAccountDropDown] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -69,7 +69,16 @@ const Header = () => {
             <NavLink href="/about" onClick={() => setShowMenu(false)}>
               About
             </NavLink>
-            {!user ? (
+            {initializing ? (
+              // Who is signed in isn't known yet: keep the button's space
+              // without flashing "Login" at a signed-in user
+              <span
+                aria-hidden="true"
+                className="px-8 py-2 invisible"
+              >
+                Login
+              </span>
+            ) : !user ? (
               <Link
                 href="/login"
                 className="px-8 py-2 bg-alternate text-black hover:bg-black hover:text-alternate transition-colors hover:rounded-md"

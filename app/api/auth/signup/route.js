@@ -1,7 +1,5 @@
-import { auth, db } from '@/lib/firebase/firebase';
+import repository from '@/lib/data/repository';
 import { passwordSecurityCheck } from '@/lib/helpers/passwordSecurityCheck ';
-import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -24,34 +22,18 @@ export async function POST(request) {
     );
   }
 
-  let user = null;
-
   try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    user = userCredential.user;
-
-    const userDocRef = doc(db, 'users', user.uid);
-
-    await setDoc(userDocRef, {
+    const { uid, user } = await repository.signUpUser({
       fullName,
       email,
-      createdAt: serverTimestamp(),
-      isAdmin: false,
+      password,
     });
 
     return NextResponse.json(
-      { message: 'User signed up successfully!', uid: user.uid, user },
+      { message: 'User signed up successfully!', uid, user },
       { status: 201 }
     );
   } catch (error) {
-    if (user) {
-      await deleteUser(user);
-    }
-
     return NextResponse.json(
       { message: `Error during sign-up: ${error.message}` },
       { status: 500 }

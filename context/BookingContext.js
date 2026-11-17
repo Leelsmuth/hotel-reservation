@@ -3,8 +3,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import differenceInCalendarDays from 'date-fns/differenceInCalendarDays';
 import addDays from 'date-fns/addDays';
-import { db } from '@/lib/firebase/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { subscribeToDiscounts } from '@/lib/data/discounts';
+import {
+  calculateBookingPrice,
+  discountForNights,
+} from '@/lib/pricing/bookingPrice';
 // import { DISCOUNT } from '@/lib/static/roomLegend';
 
 const BookingContext = createContext();
@@ -41,40 +44,25 @@ export const BookingProvider = ({ children }) => {
     THIRTYPLUS: 0,
   });
 
-  const TAX_PERCENTAGE = 13;
-
   useEffect(() => {
-    const discountDocRef = doc(db, 'discounts', 'daysDiscount');
-
-    const unsubscribe = onSnapshot(discountDocRef, (doc) => {
-      if (doc.exists()) {
-        const discountData = doc.data();
-        setDiscounts({
-          ELEVEN: discountData.ELEVEN || 0,
-          TWENTYONE: discountData.TWENTYONE || 0,
-          THIRTYPLUS: discountData.THIRTYPLUS || 0,
-        });
-      } else {
-        console.error('No discount data found');
-      }
+    const unsubscribe = subscribeToDiscounts((discountData) => {
+      setDiscounts({
+        ELEVEN: discountData.ELEVEN || 0,
+        TWENTYONE: discountData.TWENTYONE || 0,
+        THIRTYPLUS: discountData.THIRTYPLUS || 0,
+      });
     });
 
     return () => unsubscribe();
   }, []);
 
+  // Display only: the server prices the stay itself (lib/pricing/bookingPrice)
   const updateRoomPrice = (roomPrice) => {
-    const roundToTwoDecimals = (num) => Math.round(num * 100) / 100;
-
-    const discountFactor = 1 - bookingDetails.discount / 100;
-    const pricePerNight = roundToTwoDecimals(roomPrice * discountFactor);
-    const discountAmount = roundToTwoDecimals(
-      (roomPrice - pricePerNight) * bookingDetails.nightsCount
-    );
-    const subtotal = roundToTwoDecimals(
-      pricePerNight * bookingDetails.nightsCount
-    );
-    const tax = roundToTwoDecimals((subtotal * TAX_PERCENTAGE) / 100);
-    const totalPrice = roundToTwoDecimals(subtotal + tax);
+    const { tax, subtotal, totalPrice, discountAmount } = calculateBookingPrice({
+      roomPrice,
+      nights: bookingDetails.nightsCount,
+      discount: bookingDetails.discount,
+    });
 
     setBookingDetails((prev) => ({
       ...prev,
@@ -88,15 +76,7 @@ export const BookingProvider = ({ children }) => {
 
   const updateDates = (checkInDate, checkOutDate) => {
     const numOfNights = differenceInCalendarDays(checkOutDate, checkInDate);
-    let applicableDiscount = 0;
-
-    if (numOfNights >= 30) {
-      applicableDiscount = discounts.THIRTYPLUS;
-    } else if (numOfNights > 20) {
-      applicableDiscount = discounts.TWENTYONE;
-    } else if (numOfNights > 10) {
-      applicableDiscount = discounts.ELEVEN;
-    }
+    const applicableDiscount = discountForNights(numOfNights, discounts);
 
     setBookingDetails((prev) => ({
       ...prev,

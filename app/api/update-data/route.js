@@ -1,14 +1,12 @@
-import { db } from '@/lib/firebase/firebase';
-import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
+import repository from '@/lib/data/repository';
 
 export async function POST(req) {
   const { content } = await req.json();
 
   try {
-    // const docRef = await setDoc(doc(db, 'roomList', content.typeId), content);
-    const docRef = await addDoc(collection(db, 'rooms'), content);
+    const id = await repository.addRoom(content);
 
-    return new Response(JSON.stringify({ id: docRef.id }), { status: 200 });
+    return new Response(JSON.stringify({ id }), { status: 200 });
   } catch (error) {
     console.log(error);
     return new Response(JSON.stringify({ error: 'Failed to add data' }), {

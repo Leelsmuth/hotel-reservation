@@ -7,15 +7,14 @@ import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useToast } from '@/context/ToastContext';
 import { passwordSecurityCheck } from '@/lib/helpers/passwordSecurityCheck ';
-import { validatePhoneNumber } from '@/lib/helpers/validatePhoneNumber';
+import { getPhoneNumberError } from '@/lib/helpers/validatePhoneNumber';
 import { handleError } from '@/lib/toast/handleError';
 import { handleSuccess } from '@/lib/toast/handleSuccess';
-import { sendEmailVerification } from 'firebase/auth';
+import { authClient } from '@/lib/auth/authClient';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import 'react-phone-number-input/style.css';
-import PhoneInput from 'react-phone-number-input';
+import PhoneNumberInput from '@/components/forms/PhoneNumberInput';
 import BasicModal from '@/components/toast/BasicModal';
 
 const SignUp = () => {
@@ -51,10 +50,9 @@ const SignUp = () => {
       return;
     }
 
-    if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError(
-        'Please enter a valid phone number. US/Canada numbers must be 10 digits.'
-      );
+    const phoneValidationError = getPhoneNumberError(phoneNumber);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
       return;
     }
 
@@ -78,7 +76,7 @@ const SignUp = () => {
       const data = await response.json();
 
       if (response.ok) {
-        await sendEmailVerification(data.user);
+        await authClient.sendEmailVerification(data.user);
         handleSuccess(
           showToast,
           'Signup successful! Verification email has been sent'
@@ -120,10 +118,11 @@ const SignUp = () => {
             />
           </div>
           <div className="mb-8">
-            <label className="block font-bold">Phone Number</label>
-            <PhoneInput
-              international
-              defaultCountry="CA"
+            <label htmlFor="signup-phone" className="block font-bold">
+              Phone Number
+            </label>
+            <PhoneNumberInput
+              id="signup-phone"
               value={phoneNumber}
               onChange={(value) => {
                 setPhoneNumber(value);

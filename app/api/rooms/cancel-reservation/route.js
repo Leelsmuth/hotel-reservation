@@ -1,5 +1,4 @@
-import { db } from '@/lib/firebase/firebase';
-import { arrayRemove, doc, runTransaction } from 'firebase/firestore';
+import repository from '@/lib/data/repository';
 import { NextResponse } from 'next/server';
 
 export async function PATCH(request) {
@@ -14,32 +13,11 @@ export async function PATCH(request) {
       );
     }
 
-    await runTransaction(db, async (transaction) => {
-      const reservationRef = doc(db, 'reservations', reservationId);
-      const reservationDoc = await transaction.get(reservationRef);
-      if (!reservationDoc.exists()) {
-        throw new Error(`Reservation with ID ${reservationId} does not exist.`);
-      }
-
-      const roomRef = doc(db, 'rooms', roomId);
-      const roomDoc = await transaction.get(roomRef);
-      if (!roomDoc.exists()) {
-        throw new Error(`Room with ID ${roomId} does not exist.`);
-      }
-
-      const existingBookings = roomDoc.data().bookings || [];
-
-      const bookingToRemove = { bookedFrom, bookedUntil };
-
-      transaction.update(reservationRef, { bookingStatus: 'cancelled' });
-
-      transaction.update(roomRef, {
-        bookings: arrayRemove(bookingToRemove),
-      });
-
-      if (existingBookings.length === 1) {
-        transaction.update(roomRef, { status: 'available' });
-      }
+    await repository.cancelReservation({
+      reservationId,
+      roomId,
+      bookedFrom,
+      bookedUntil,
     });
 
     return NextResponse.json({

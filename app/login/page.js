@@ -7,7 +7,7 @@ import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useAuth } from '@/context/AuthProvider';
 import { useToast } from '@/context/ToastContext';
-import { sendEmailVerification } from 'firebase/auth';
+import { authClient } from '@/lib/auth/authClient';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
@@ -31,26 +31,36 @@ const Login = () => {
     setError('');
 
     try {
-      await login(email, password);
+      const signedInUser = await login(email, password);
+      handleSignedInUser(signedInUser);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
       handleError(err.message || 'Something went wrong. Please try again.');
     }
   };
 
-  useEffect(() => {
-    if (effectCalled.current) return;
-    effectCalled.current = true;
-
-    if (user && user.emailVerified) {
+  const handleSignedInUser = (signedInUser) => {
+    if (signedInUser.emailVerified) {
       handleSuccess('Login Successful!. Redirecting...');
       router.push(redirectTo);
-    } else if (user && !user.emailVerified) {
+    } else {
       setError('Please verify your email before logging in.');
-      handleErrorAction();
+      handleErrorAction(signedInUser);
+    }
+  };
+
+  // Already signed in when the page opens. Waits for any auth action in
+  // flight (e.g. "Sign out" navigates here before sign-out has finished), then
+  // runs once per mount (the ref also stops React StrictMode's double run).
+  useEffect(() => {
+    if (loading || effectCalled.current) return;
+    effectCalled.current = true;
+
+    if (user) {
+      handleSignedInUser(user);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, redirectTo, router]);
+  }, [loading]);
 
   const handleSuccess = (message) => {
     showToast(message, 'success', {
@@ -64,26 +74,43 @@ const Login = () => {
     });
   };
 
-  const handleErrorAction = () => {
+  // The "please verify" toast stays until acted on, so only keep one and
+  // remove it when leaving the page
+  const dismissVerifyToast = () => {
+    if (errorToastId.current) {
+      removeToast(errorToastId.current);
+      errorToastId.current = null;
+    }
+  };
+
+  useEffect(() => dismissVerifyToast, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Takes the user explicitly: when called right after login(), `user` from
+  // this render's closure is still the pre-login value.
+  const handleErrorAction = (unverifiedUser) => {
+    dismissVerifyToast();
     errorToastId.current = showToast(
       'Please verify your email before logging in.',
       'error',
       {
-        action: () => resendVerification(),
+        action: () => resendVerification(unverifiedUser),
         actionLabel: 'Get new link',
         autoClose: false,
       }
     );
   };
 
-  const resendVerification = async () => {
-    await sendEmailVerification(user);
-    handleSuccess('Verification mail resent! Check inbox/junk');
-    logout();
-
-    if (errorToastId.current) {
-      removeToast(errorToastId.current);
-      errorToastId.current = null;
+  const resendVerification = async (unverifiedUser) => {
+    // Dismiss first so a double click can't send two emails
+    dismissVerifyToast();
+    try {
+      await authClient.sendEmailVerification(unverifiedUser);
+      handleSuccess('Verification mail resent! Check inbox/junk');
+      logout();
+    } catch (err) {
+      handleError(
+        err.message || 'Could not send a new verification email. Please try again.'
+      );
     }
   };
 

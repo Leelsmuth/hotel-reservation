@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthProvider';
 import { BookingProvider } from '@/context/BookingContext';
 import { ToastProvider } from '@/context/ToastContext';
 import Toast from '@/components/toast/Toast';
+import MockModeBadge from '@/components/dev/MockModeBadge';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -36,6 +37,7 @@ const RootLayout = ({ children }) => {
             </BookingProvider>
           </AuthProvider>
           <Toast />
+          <MockModeBadge />
         </ToastProvider>
       </body>
     </html>

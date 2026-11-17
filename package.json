@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "node scripts/dev-mock.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
