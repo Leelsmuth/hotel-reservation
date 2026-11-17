@@ -1,15 +1,4 @@
-import { db } from '@/lib/firebase/firebase';
-import { isDateOverlap } from '@/lib/helpers/isDateOverlap';
-import { ROOM_STATUS } from '@/lib/static/roomLegend';
-import {
-  arrayUnion,
-  collection,
-  doc,
-  getDocs,
-  query,
-  runTransaction,
-  where,
-} from 'firebase/firestore';
+import repository from '@/lib/data/repository';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -25,16 +14,12 @@ export async function GET(request) {
       );
     }
 
-    const reservationsRef = collection(db, 'reservations');
-    const reservationQuery = query(
-      reservationsRef,
-      where('bookingStatus', '==', bookingStatus),
-      where('userId', '==', userId)
+    const reservations = await repository.findReservationsByUser(
+      userId,
+      bookingStatus
     );
 
-    const querySnapshot = await getDocs(reservationQuery);
-
-    if (querySnapshot.empty) {
+    if (reservations.length === 0) {
       return NextResponse.json(
         {
           message: `No ${bookingStatus} reservation found`,
@@ -42,11 +27,6 @@ export async function GET(request) {
         { status: 404 }
       );
     }
-
-    let reservations = [];
-    querySnapshot.forEach((doc) => {
-      reservations.push({ id: doc.id, ...doc.data() });
-    });
 
     return NextResponse.json({ reservations });
   } catch (error) {

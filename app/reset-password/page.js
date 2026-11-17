@@ -40,13 +40,18 @@ const ResetPassword = () => {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      router.push('/account');
-    }
-  }, [user, router]);
+  // Signed-in users manage their account from /profile. Unverified users are
+  // technically signed in (after a login attempt) but can't use the app, so
+  // they can still reset their password here.
+  const isSignedIn = Boolean(user?.emailVerified);
 
-  if (user || loading)
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace('/profile');
+    }
+  }, [isSignedIn, router]);
+
+  if (isSignedIn || loading)
     return (
       <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
         <Spinner

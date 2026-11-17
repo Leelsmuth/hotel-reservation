@@ -3,12 +3,7 @@
 import AuthLayout from '@/components/layout/AuthLayout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { auth } from '@/lib/firebase/firebase';
-import {
-  applyActionCode,
-  confirmPasswordReset,
-  verifyPasswordResetCode,
-} from 'firebase/auth';
+import { authClient } from '@/lib/auth/authClient';
 import Container from '@/components/layout/Container';
 import Link from 'next/link';
 import Spinner from '@/components/anim/Spinner';
@@ -16,6 +11,9 @@ import HeadingOne from '@/components/typography/HeadingOne';
 import StyledButton from '@/components/ui/StyledButton';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthProvider';
+
+// Firebase errors meaning the reset link itself is no good
+const LINK_ERROR_CODES = ['auth/expired-action-code', 'auth/invalid-action-code'];
 
 const AuthManager = () => {
   const router = useRouter();
@@ -30,9 +28,13 @@ const AuthManager = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  // The reset link itself is expired/invalid (vs. e.g. a too-weak password)
+  const [linkInvalid, setLinkInvalid] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState('Verifying...');
 
   const errorToastId = useRef(null);
+  // The link's action already started for this mode/code (see effect below)
+  const handledAction = useRef(null);
 
   const handleSuccess = (message) => {
     showToast(message, 'success', {
@@ -46,22 +48,58 @@ const AuthManager = () => {
     });
   };
 
+  // The error toast with an action stays until used: keep at most one and
+  // remove it when leaving the page
+  const dismissErrorToast = () => {
+    if (errorToastId.current) {
+      removeToast(errorToastId.current);
+      errorToastId.current = null;
+    }
+  };
+
+  useEffect(() => dismissErrorToast, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleErrorAction = (error, actionLabel, actionFxn) => {
+    dismissErrorToast();
     errorToastId.current = showToast(error, 'error', {
-      action: () => actionFxn,
+      action: actionFxn,
       actionLabel: actionLabel,
       autoClose: false,
     });
   };
 
-  const reinitiatePasswordReset = async () => {
-    await initiatePasswordReset(email);
-    handleSuccess('Password reset link resent! Check inbox/junk');
-    router.replace('/');
-    if (errorToastId.current) {
-      removeToast(errorToastId.current);
-      errorToastId.current = null;
+  /**
+   * "Get New Link". If we know whose link it was, email them a new one.
+   * If the link was invalid from the start we don't know the email, so ask
+   * for it on /reset-password (this used to send a reset to an empty email).
+   */
+  const requestNewResetLink = async (knownEmail) => {
+    dismissErrorToast();
+
+    if (!knownEmail) {
+      router.push('/reset-password');
+      return;
     }
+
+    try {
+      await initiatePasswordReset(knownEmail);
+      handleSuccess('Password reset link resent! Check inbox/junk');
+      router.replace('/');
+    } catch (err) {
+      handleError(
+        err.message || 'Could not send a new reset link. Please try again.'
+      );
+    }
+  };
+
+  const showInvalidLink = (knownEmail) => {
+    setLinkInvalid(true);
+    setError('This password reset link has expired or has already been used.');
+    handleErrorAction(
+      'This reset link has expired. Get a new one?',
+      'Get New Link',
+      () => requestNewResetLink(knownEmail)
+    );
   };
 
   const handlePasswordReset = async (event) => {
@@ -70,48 +108,51 @@ const AuthManager = () => {
     setError('');
 
     try {
-      await confirmPasswordReset(auth, actionCode, password);
+      await authClient.confirmPasswordReset(actionCode, password);
 
+      dismissErrorToast();
       handleSuccess(
         'Password reset successful! You can now log in with your new password.'
       );
       router.replace('/login');
     } catch (err) {
-      setError(err.message || 'Failed to reset password. Please try again.');
-      handleErrorAction(
-        'Something went wrong. Try again',
-        'Get New Link',
-        reinitiatePasswordReset
-      );
+      if (LINK_ERROR_CODES.includes(err.code)) {
+        showInvalidLink(email);
+      } else {
+        // e.g. a too-weak password: the link still works, just try again
+        setError(err.message || 'Failed to reset password. Please try again.');
+        handleError(err.message || 'Failed to reset password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Action codes are single-use, so the action must run once per link. React
+    // StrictMode runs effects twice in development: the second
+    // applyActionCode() failed on the already-used code and redirected to "/".
+    const actionKey = `${actionMode}:${actionCode}`;
+    if (handledAction.current === actionKey) return;
+    handledAction.current = actionKey;
+
     const handleAction = async () => {
       setLoading(true);
       try {
         switch (actionMode) {
           case 'resetPassword':
             try {
-              const email = await verifyPasswordResetCode(auth, actionCode);
+              const email = await authClient.verifyPasswordResetCode(actionCode);
               setEmail(email);
             } catch (err) {
-              setError(
-                err.message ||
-                  'Invalid or expired reset code. Please request a new one.'
-              );
-              handleErrorAction(
-                'Something went wrong. Try again',
-                'Get New Link',
-                reinitiatePasswordReset
-              );
+              // We don't know whose link this was, so "Get New Link" asks
+              // for the email address
+              showInvalidLink(null);
             }
             break;
           case 'verifyEmail':
             try {
-              await applyActionCode(auth, actionCode);
+              await authClient.applyActionCode(actionCode);
               setVerificationStatus(
                 'Email verified successfully! Please login'
               );
@@ -122,7 +163,7 @@ const AuthManager = () => {
               setTimeout(() => {
                 router.replace(
                   redirectTo
-                    ? `/login?redirectTo=${encodeURIComponent(redirectUrl)}`
+                    ? `/login?redirectTo=${encodeURIComponent(redirectTo)}`
                     : '/login'
                 );
               }, 2000);
@@ -196,7 +237,12 @@ const AuthManager = () => {
               />
             </div>
             {error && (
-              <div>
+              <p role="alert" className="mb-4 text-red-600">
+                {error}
+              </p>
+            )}
+            {linkInvalid && (
+              <div className="mb-4">
                 <Link href="/reset-password" className="text-xl">
                   Get a new reset password link
                 </Link>

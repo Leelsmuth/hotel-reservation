@@ -17,9 +17,8 @@ import HeadingTwo from '@/components/typography/HeadingTwo';
 import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
 import OptionGenerator from '@/components/forms/OptionGenerator ';
 import { useAuth } from '@/context/AuthProvider';
-import 'react-phone-number-input/style.css';
-import PhoneInput from 'react-phone-number-input';
-import { validatePhoneNumber } from '@/lib/helpers/validatePhoneNumber';
+import PhoneNumberInput from '@/components/forms/PhoneNumberInput';
+import { getPhoneNumberError } from '@/lib/helpers/validatePhoneNumber';
 import { useToast } from '@/context/ToastContext';
 import { handleError } from '@/lib/toast/handleError';
 
@@ -101,10 +100,9 @@ const MakeReservation = () => {
       return;
     }
 
-    if (!validatePhoneNumber(contactDetails.phone)) {
-      setPhoneError(
-        'Please enter a valid phone number. US/Canada numbers must be 10 digits.'
-      );
+    const phoneValidationError = getPhoneNumberError(contactDetails.phone);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
       return;
     }
 
@@ -144,12 +142,18 @@ const MakeReservation = () => {
       });
 
       if (!response.ok) {
-        setError(`Failed to reserve room: ${response.statusText}`);
+        const { error: reason } = await response.json().catch(() => ({}));
+        const message = `Failed to reserve room: ${reason || response.statusText}`;
+        setError(message);
+        handleError(showToast, message);
         return;
       }
 
       const data = await response.json();
       setReservationData(data);
+
+      // The server prices the stay; use its figures, not the ones shown here
+      const reservedDetails = { ...details, ...data.pricing };
 
       await fetch('/api/send-confirmation-email/reservation', {
         method: 'POST',
@@ -157,8 +161,8 @@ const MakeReservation = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          recipient: details.contactDetails.email,
-          bookingDetails: details,
+          recipient: reservedDetails.contactDetails.email,
+          bookingDetails: reservedDetails,
         }),
       });
       // setShowingSection(1);
@@ -166,7 +170,7 @@ const MakeReservation = () => {
       router.push(
         `/make-reservation/confirmation?resId=${data.reservationId}&bId=${data.bookingId}`
       );
-      updateBooking(details);
+      updateBooking(reservedDetails);
       resetBookingDetails();
     } catch (error) {
       setError(error.message);
@@ -458,10 +462,14 @@ const MakeReservation = () => {
                         />
                       </div> */}
                       <div>
-                        <label className="block font-bold">Phone Number</label>
-                        <PhoneInput
-                          international
-                          defaultCountry="CA"
+                        <label
+                          htmlFor="contact-phone"
+                          className="block font-bold"
+                        >
+                          Phone Number
+                        </label>
+                        <PhoneNumberInput
+                          id="contact-phone"
                           value={phoneNumber}
                           onChange={(value) => {
                             setPhoneNumber(value);
