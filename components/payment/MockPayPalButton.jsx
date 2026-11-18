@@ -54,7 +54,7 @@ const MockPayPalButton = ({ amount, onSuccess, onError }) => {
   };
 
   return (
-    <div className="rounded-lg border border-dashed border-amber-500 bg-amber-50 p-4 text-base">
+    <div className="rounded-xl border border-dashed border-amber-400 bg-amber-50 p-4 text-sm">
       <div className="mb-3 text-amber-900">
         <strong>Mock PayPal:</strong> no real charge is made.
       </div>
@@ -71,7 +71,7 @@ const MockPayPalButton = ({ amount, onSuccess, onError }) => {
           type="button"
           disabled={loading}
           onClick={() => simulate(false)}
-          className="underline text-neutral-700 disabled:opacity-60"
+          className="underline text-ink-700 disabled:opacity-60"
         >
           Simulate failure
         </button>

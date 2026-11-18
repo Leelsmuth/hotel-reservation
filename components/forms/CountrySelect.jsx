@@ -215,7 +215,7 @@ const CountrySelect = ({
       <button
         ref={buttonRef}
         type="button"
-        className="flex items-center gap-2 rounded-lg pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center gap-2 rounded-lg pe-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-700 disabled:cursor-not-allowed disabled:opacity-60"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={`${ariaLabel}: ${selected ? `${selected.label} ${selectedCode}` : 'International'}. Change country`}
@@ -224,13 +224,13 @@ const CountrySelect = ({
         onKeyDown={handleButtonKeyDown}
       >
         <Flag aria-hidden="true" country={value} label={selected?.label ?? 'International'} />
-        <span className="text-base text-neutral-600 tabular-nums">
+        <span className="text-base text-ink-600 tabular-nums">
           {selectedCode}
         </span>
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
-          className={`h-4 w-4 text-neutral-500 transition-transform ${
+          className={`h-4 w-4 text-ink-600 transition-transform ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill="currentColor"
@@ -241,11 +241,11 @@ const CountrySelect = ({
 
       {isOpen && (
         <div
-          className={`absolute left-0 z-30 w-[min(20rem,calc(100vw-3rem))] overflow-hidden rounded-xl border border-gray-300 bg-white text-base shadow-xl ${
+          className={`absolute left-0 z-30 w-[min(20rem,calc(100vw-3rem))] overflow-hidden rounded-xl border border-ink-100 bg-white text-base shadow-popover ${
             opensUpward ? 'bottom-full mb-3' : 'top-full mt-3'
           }`}
         >
-          <div className="border-b border-gray-200 p-2">
+          <div className="border-b border-ink-100 p-2">
             <input
               ref={searchRef}
               type="text"
@@ -259,7 +259,7 @@ const CountrySelect = ({
               aria-label="Search countries"
               placeholder="Search country or code"
               autoComplete="off"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              className="w-full rounded-lg border border-ink-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gold-400/60 focus:border-gold-700"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -276,7 +276,7 @@ const CountrySelect = ({
             className="relative max-h-64 overflow-y-auto py-1"
           >
             {selectable.length === 0 && (
-              <li className="px-3 py-2 text-neutral-500">No countries found</li>
+              <li className="px-3 py-2 text-ink-600">No countries found</li>
             )}
             {visibleOptions.map((option, index) => {
               if (option.divider) {
@@ -284,7 +284,7 @@ const CountrySelect = ({
                   <li
                     key={`divider-${index}`}
                     role="separator"
-                    className="my-1 border-t border-gray-200"
+                    className="my-1 border-t border-ink-100"
                   />
                 );
               }
@@ -297,7 +297,7 @@ const CountrySelect = ({
                   role="option"
                   aria-selected={isSelected}
                   className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${
-                    isActive ? 'bg-alternate/30' : ''
+                    isActive ? 'bg-gold-100' : ''
                   } ${isSelected ? 'font-bold' : ''}`}
                   // mousemove (not mouseenter) so only real pointer movement
                   // changes the highlight, not the list moving under the mouse
@@ -313,7 +313,7 @@ const CountrySelect = ({
                 >
                   <Flag aria-hidden="true" country={option.value} label={option.label} />
                   <span className="flex-1 truncate">{option.label}</span>
-                  <span className="text-neutral-500 tabular-nums">
+                  <span className="text-ink-600 tabular-nums">
                     {callingCodeOf(option.value)}
                   </span>
                 </li>

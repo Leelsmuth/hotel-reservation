@@ -1,15 +1,16 @@
 'use client';
 
-import Spinner from '@/components/anim/Spinner';
 import AuthLayout from '@/components/layout/AuthLayout';
-import Container from '@/components/layout/Container';
-import HeadingOne from '@/components/typography/HeadingOne';
-import StyledButton from '@/components/ui/StyledButton';
+import { TextField } from '@/components/forms/Field';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import LoadingState from '@/components/ui/LoadingState';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthProvider';
 import { useToast } from '@/context/ToastContext';
 import { handleSuccess } from '@/lib/toast/handleSuccess';
 import { useRouter } from 'next/navigation';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const ResetPassword = () => {
   const router = useRouter();
@@ -51,53 +52,46 @@ const ResetPassword = () => {
     }
   }, [isSignedIn, router]);
 
-  if (isSignedIn || loading)
-    return (
-      <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-        <Spinner
-          spinnerColor="text-primary"
-          spinnerHeight="h-1/5"
-          spinnerWidth="w-1/5"
-        />
-      </div>
-    );
+  if (isSignedIn)
+    return <LoadingState overlay label="Redirecting to your account…" />;
 
   return (
-    <AuthLayout>
-      <Container classes="my-8">
-        <HeadingOne>Forgot your info?</HeadingOne>
-        <div className="text-primary text-xl mb-3">Get a new password</div>
-        <div className="mb-8">
-          Enter your registered Email Address on our records and will send you
-          information on how to reset your password
-        </div>
-        <form onSubmit={handlePasswordReset}>
-          <div className="mb-8">
-            <label className="block">Email Address</label>
-            <input
-              type="email"
-              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          {message && <p style={{ color: 'green' }}>{message}</p>}
-          <div className="*:w-full">
-            <StyledButton btnText="Submit" isSubmitBtn={true} />
-          </div>
-        </form>
-        {loading && (
-          <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-            <Spinner
-              spinnerColor="text-primary"
-              spinnerHeight="h-1/5"
-              spinnerWidth="w-1/5"
-            />
-          </div>
+    <AuthLayout
+      title="Reset your password"
+      subtitle="Enter the email address on your account and we'll send you a link to choose a new password."
+    >
+      <form onSubmit={handlePasswordReset} className="space-y-5">
+        {error && (
+          <Alert tone="error" title="We couldn't send the link">
+            {error}
+          </Alert>
         )}
-      </Container>
+        {message && <Alert tone="success">{message}</Alert>}
+        <TextField
+          id="reset-email"
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          loading={loading}
+          loadingText="Please wait…"
+        >
+          Send reset link
+        </Button>
+      </form>
+      <p className="mt-8 border-t border-ink-100 pt-6 text-center text-sm text-ink-600">
+        Remembered it?{' '}
+        <Link href="/login" className="link">
+          Back to log in
+        </Link>
+      </p>
     </AuthLayout>
   );
 };

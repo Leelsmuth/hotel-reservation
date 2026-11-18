@@ -1,3 +1,15 @@
+'use client';
+
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Alert from '../ui/Alert';
+import { formatPrice } from '@/lib/helpers/formatters';
+
+/**
+ * Confirms cancelling a reservation (free) or a paid booking (30% fee).
+ * The safe choice ("Keep …") is the secondary button; the destructive one is
+ * red and says exactly what it does.
+ */
 const ConfirmationModal = ({
   isOpen,
   onClose,
@@ -5,35 +17,60 @@ const ConfirmationModal = ({
   price,
   isBooking = true,
 }) => {
-  if (!isOpen) return null;
+  const noun = isBooking ? 'booking' : 'reservation';
+  const hasPrice =
+    Number.isFinite(Number(price)) && price !== undefined && price !== null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 shadow-lg max-w-md w-full">
-        <h2 className="text-lg font-semibold mb-4">Confirm Action</h2>
-        <p className="mb-6">
-          {isBooking
-            ? `Are you sure you want to cancel this reservation? A 30% fine will be applied. Only $${(
-                0.7 * price
-              ).toFixed(2)} will be refunded.`
-            : 'Are you sure you want to cancel this reservation? This action cannot be reversed'}
-        </p>
-        <div className="flex justify-end gap-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
-          >
-            Yes, Cancel {isBooking ? 'Booking' : 'Reservation'}
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="sm"
+      title={`Cancel this ${noun}?`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Keep {noun}
+          </Button>
+          <Button variant="danger" onClick={onConfirm}>
+            Yes, cancel {noun}
+          </Button>
+        </>
+      }
+    >
+      {isBooking ? (
+        <div className="space-y-4">
+          <p>
+            Cancelling a paid booking incurs a{' '}
+            <strong>30% cancellation fee</strong>.
+          </p>
+          {hasPrice && (
+            <dl className="space-y-2 rounded-xl bg-ink-50 p-4 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-ink-600">Amount paid</dt>
+                <dd className="tabular-nums">{formatPrice(price)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-ink-600">Cancellation fee (30%)</dt>
+                <dd className="tabular-nums">−{formatPrice(0.3 * price)}</dd>
+              </div>
+              <div className="flex justify-between border-t border-ink-200 pt-2 font-semibold text-ink-900">
+                <dt>You'll be refunded</dt>
+                <dd className="tabular-nums">{formatPrice(0.7 * price)}</dd>
+              </div>
+            </dl>
+          )}
+          <Alert tone="warning">This can't be undone.</Alert>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className="space-y-4">
+          <p>
+            Your room will be released and you won't be charged. This can't be
+            undone.
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 };
 

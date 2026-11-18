@@ -4,16 +4,18 @@ import AuthLayout from '@/components/layout/AuthLayout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authClient } from '@/lib/auth/authClient';
-import Container from '@/components/layout/Container';
-import Link from 'next/link';
-import Spinner from '@/components/anim/Spinner';
-import HeadingOne from '@/components/typography/HeadingOne';
-import StyledButton from '@/components/ui/StyledButton';
+import { TextField } from '@/components/forms/Field';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import LoadingState from '@/components/ui/LoadingState';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthProvider';
 
 // Firebase errors meaning the reset link itself is no good
-const LINK_ERROR_CODES = ['auth/expired-action-code', 'auth/invalid-action-code'];
+const LINK_ERROR_CODES = [
+  'auth/expired-action-code',
+  'auth/invalid-action-code',
+];
 
 const AuthManager = () => {
   const router = useRouter();
@@ -121,7 +123,9 @@ const AuthManager = () => {
       } else {
         // e.g. a too-weak password: the link still works, just try again
         setError(err.message || 'Failed to reset password. Please try again.');
-        handleError(err.message || 'Failed to reset password. Please try again.');
+        handleError(
+          err.message || 'Failed to reset password. Please try again.'
+        );
       }
     } finally {
       setLoading(false);
@@ -142,7 +146,8 @@ const AuthManager = () => {
         switch (actionMode) {
           case 'resetPassword':
             try {
-              const email = await authClient.verifyPasswordResetCode(actionCode);
+              const email =
+                await authClient.verifyPasswordResetCode(actionCode);
               setEmail(email);
             } catch (err) {
               // We don't know whose link this was, so "Get New Link" asks
@@ -201,74 +206,89 @@ const AuthManager = () => {
   return (
     <AuthLayout>
       {loading && (
-        <div className="min-h-screen flex justify-center items-center fixed inset-0">
-          <Spinner
-            spinnerColor="text-primary"
-            spinnerHeight="h-1/5"
-            spinnerWidth="w-1/5"
-          />
-        </div>
+        <LoadingState
+          label={
+            actionMode === 'verifyEmail'
+              ? 'Verifying your email…'
+              : 'Checking your link…'
+          }
+          className="min-h-[40vh]"
+        />
       )}
 
       {!loading && actionMode === 'resetPassword' && (
-        <Container classes="my-8">
-          <HeadingOne>Reset your password</HeadingOne>
-          <div className="text-primary text-xl mb-3">Choose a new password</div>
-          <div className="mb-8">Enter a new password</div>
-          <form onSubmit={handlePasswordReset}>
-            <div className="mb-8">
-              <label className="block">Email Address</label>
-              <input
-                type="email"
-                className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400 read-only:opacity-80 read-only:bg-neutral-100 read-only:cursor-not-allowed read-only:focus-visible:outline-none"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                readOnly
-              />
-            </div>
-            <div className="mb-8">
-              <label className="block">New Password</label>
-              <input
-                type="password"
-                className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+            Choose a new password
+          </h1>
+          <p className="mb-8 mt-2 text-ink-600">
+            Enter a new password for your account.
+          </p>
+          <form onSubmit={handlePasswordReset} className="space-y-5">
             {error && (
-              <p role="alert" className="mb-4 text-red-600">
+              <Alert
+                tone="error"
+                action={
+                  linkInvalid && (
+                    <Button
+                      href="/reset-password"
+                      size="sm"
+                      variant="secondary"
+                    >
+                      Get a new reset link
+                    </Button>
+                  )
+                }
+              >
                 {error}
-              </p>
+              </Alert>
             )}
-            {linkInvalid && (
-              <div className="mb-4">
-                <Link href="/reset-password" className="text-xl">
-                  Get a new reset password link
-                </Link>
-              </div>
-            )}
-            <div className="*:w-full">
-              <StyledButton btnText="Submit" isSubmitBtn={true} />
-            </div>
+            <TextField
+              id="new-password-email"
+              label="Email address"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              readOnly
+            />
+            <TextField
+              id="new-password"
+              label="New password"
+              type="password"
+              autoComplete="new-password"
+              hint="At least 8 characters, with an uppercase letter, a lowercase letter and a number."
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <Button type="submit" size="lg" fullWidth>
+              Save new password
+            </Button>
           </form>
-          {/* {loading && (
-            <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-              <Spinner
-                spinnerColor="text-primary"
-                spinnerHeight="h-1/5"
-                spinnerWidth="w-1/5"
-              />
-            </div>
-          )} */}
-        </Container>
+        </div>
       )}
       {!loading && actionMode === 'verifyEmail' && (
-        <Container className="my-8">
-          <HeadingOne>Email Verification</HeadingOne>
-          <p className="text-2xl">{verificationStatus}</p>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-        </Container>
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+            Email verification
+          </h1>
+          <div className="mt-6 space-y-4">
+            {error ? (
+              <Alert tone="error">{error}</Alert>
+            ) : (
+              <Alert
+                tone={
+                  verificationStatus.startsWith('Email verified')
+                    ? 'success'
+                    : 'info'
+                }
+              >
+                {verificationStatus}
+              </Alert>
+            )}
+          </div>
+        </div>
       )}
     </AuthLayout>
   );

@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import { MOCK_TEST_CARDS as TEST_CARDS } from '@/lib/mock/testCards';
+import Alert from '../ui/Alert';
+import Button from '../ui/Button';
+import { Field } from '../forms/Field';
+import { formatPrice } from '@/lib/helpers/formatters';
 
 /**
  * Stand-in for Stripe's <PaymentElement /> in mock mode. Nothing is charged
@@ -12,10 +16,7 @@ import { MOCK_TEST_CARDS as TEST_CARDS } from '@/lib/mock/testCards';
 
 const formatCardNumber = (number) => number.replace(/(\d{4})(?=\d)/g, '$1 ');
 
-const inputClasses =
-  'border w-full text-lg px-4 py-3 rounded-lg border-gray-300 bg-[#f6f9fc]';
-
-const MockPaymentForm = ({ clientSecret, onPaymentSuccess }) => {
+const MockPaymentForm = ({ clientSecret, onPaymentSuccess, amount }) => {
   const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
   const [expiry, setExpiry] = useState('12 / 34');
   const [cvc, setCvc] = useState('123');
@@ -53,61 +54,75 @@ const MockPaymentForm = ({ clientSecret, onPaymentSuccess }) => {
     }
   };
 
+  const label =
+    Number.isFinite(Number(amount)) && amount !== undefined && amount !== null
+      ? `Pay ${formatPrice(amount)}`
+      : 'Pay now';
+
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="mb-4 rounded-lg border border-dashed border-amber-500 bg-amber-50 px-4 py-3 text-base text-amber-900">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="rounded-xl border border-dashed border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <strong>Mock payment:</strong> no real charge is made. Test cards:
-        <ul className="mt-1 list-disc ms-6">
-          {Object.entries(TEST_CARDS).map(([number, { label }]) => (
+        <ul className="mt-1 list-disc ms-5">
+          {Object.entries(TEST_CARDS).map(([number, { label: cardLabel }]) => (
             <li key={number}>
               <button
                 type="button"
-                className="font-mono underline"
+                className="rounded font-mono underline underline-offset-2"
                 onClick={() => setCardNumber(formatCardNumber(number))}
               >
                 {formatCardNumber(number)}
               </button>{' '}
-              ({label})
+              ({cardLabel})
             </li>
           ))}
         </ul>
       </div>
-      <div className="grid grid-cols-2 gap-4 text-base">
-        <label className="col-span-2">
-          Card number
+      <div className="grid grid-cols-2 gap-4">
+        <Field id="mock-card-number" label="Card number" className="col-span-2">
           <input
-            className={inputClasses}
+            id="mock-card-number"
+            className="form-input font-mono tracking-wider"
             inputMode="numeric"
             autoComplete="off"
             value={cardNumber}
             onChange={(e) => setCardNumber(e.target.value)}
           />
-        </label>
-        <label>
-          Expiration
+        </Field>
+        <Field id="mock-card-expiry" label="Expiration">
           <input
-            className={inputClasses}
+            id="mock-card-expiry"
+            className="form-input"
+            placeholder="MM / YY"
             value={expiry}
             onChange={(e) => setExpiry(e.target.value)}
           />
-        </label>
-        <label>
-          CVC
+        </Field>
+        <Field id="mock-card-cvc" label="CVC">
           <input
-            className={inputClasses}
+            id="mock-card-cvc"
+            className="form-input"
+            inputMode="numeric"
             value={cvc}
             onChange={(e) => setCvc(e.target.value)}
           />
-        </label>
+        </Field>
       </div>
-      <button
+      {errorMessage && (
+        <Alert tone="error" title="Payment failed">
+          {errorMessage}
+        </Alert>
+      )}
+      <Button
         type="submit"
-        className="mt-6 bg-alternate text-black disabled:hover:bg-alternate disabled:hover:text-black disabled:opacity-75 disabled:cursor-not-allowed border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
-        disabled={loading}
+        size="lg"
+        fullWidth
+        icon="lock"
+        loading={loading}
+        loadingText="Processing payment…"
       >
-        {loading ? 'Processing...' : 'Pay Now'}
-      </button>
-      {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
+        {label}
+      </Button>
     </form>
   );
 };

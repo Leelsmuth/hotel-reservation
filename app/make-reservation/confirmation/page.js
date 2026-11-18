@@ -1,27 +1,19 @@
 'use client';
 
-import Checkmark from '@/components/icons/Checkmark';
 import Container from '@/components/layout/Container';
-import HeadingOne from '@/components/typography/HeadingOne';
-import AltStyledButton from '@/components/ui/AltStyledButton';
-import AltStyledLink from '@/components/ui/AltStyledLink';
-import StyledButton from '@/components/ui/StyledButton';
-import StyledLink from '@/components/ui/StyledLink';
+import BookingSteps from '@/components/booking/BookingSteps';
+import SuccessPanel from '@/components/booking/SuccessPanel';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const ReservationConfirmation = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const {
-    bookingDetails,
-    updateBooking,
-    resetBookingDetails,
-    updateIsGuest,
-    updateUserId,
-  } = useBooking();
+  const { updateIsGuest, updateUserId } = useBooking();
   const { user, initializing } = useAuth();
 
   const [reservationId, setReservationId] = useState('');
@@ -56,56 +48,94 @@ const ReservationConfirmation = () => {
       setBookingId(bId);
     }
   }, [searchParams]);
+
   return (
-    <Container classes="my-10">
-      <div className="text-right mt-14 mb-20">
-        <StyledLink linkText="New Reservation" path="/make-reservation" />
-      </div>
-      <div className="max-w-[500px] p-4 md:p-8 mx-auto shadow-2xl">
-        <HeadingOne classes="text-center mb-8">
-          Reservation Successful!
-        </HeadingOne>
-        <div className="text-center">
-          <Checkmark classes="w-32 h-32 mx-auto" />
-        </div>
-        <p>
-          A confirmation email will be sent to you shortly your Reservation ID:{' '}
-          {bookingId} . Please note that your reservation will be only held for
-          an hour and will be lost if not booked before then.
-        </p>
-        <div className="flex flex-col text-center gap-6 mt-6">
-          <AltStyledLink linkText="Return to Homepage" path="/" />
-          {initializing ? null : user ? (
-            <StyledButton
-              btnText="Proceed to Booking"
-              clickHandler={bookingHandler}
-            />
-          ) : (
-            <Fragment>
-              <div className="text-2xl font-bold">OR</div>
-              <div>
-                <div className="text-xl mb-2">Proceed to Booking:</div>
-                <div className=" flex flex-col gap-4 justify-center px-4">
-                  <StyledButton
-                    btnText="Existing customer? Login"
-                    clickHandler={handleBookingLogin}
+    <div className="bg-sand-50/60 pb-16 sm:pb-20">
+      <Container classes="pt-8 sm:pt-10">
+        <BookingSteps current={3} className="mb-10" />
+        <SuccessPanel
+          title="Your room is reserved"
+          intro="We've emailed your reservation details. Keep your booking ID handy to manage your stay."
+          bookingId={bookingId}
+        >
+          <Alert
+            tone="warning"
+            title="Pay within 1 hour to confirm your booking"
+          >
+            We're holding your room for 1 hour. If it isn't paid by then, the
+            reservation is released and the room becomes available to others.
+          </Alert>
+
+          <div className="mt-8">
+            <h2 className="font-display text-xl font-semibold text-ink-900">
+              Next: payment
+            </h2>
+            {initializing ? (
+              <div
+                className="mt-4 h-12 animate-pulse rounded-lg bg-ink-100"
+                aria-hidden="true"
+              />
+            ) : user ? (
+              <div className="mt-4 space-y-3">
+                <Button
+                  size="lg"
+                  fullWidth
+                  onClick={bookingHandler}
+                  iconRight="arrow-right"
+                >
+                  Continue to payment
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-5">
+                <Button
+                  size="lg"
+                  fullWidth
+                  onClick={bookingHandler}
+                  iconRight="arrow-right"
+                >
+                  Continue to payment as a guest
+                </Button>
+                <div className="relative text-center">
+                  <span
+                    className="absolute inset-x-0 top-1/2 h-px bg-ink-200"
+                    aria-hidden="true"
                   />
-                  <AltStyledButton
-                    btnText="New customer? Create account"
-                    clickHandler={handleBookingSignup}
-                  />
-                  <StyledButton
-                    btnText="Continue as Guest"
-                    clickHandler={bookingHandler}
-                  />
+                  <span className="relative bg-white px-3 text-sm text-ink-600">
+                    or sign in to keep track of your bookings
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onClick={handleBookingLogin}
+                  >
+                    Log in
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onClick={handleBookingSignup}
+                  >
+                    Create an account
+                  </Button>
                 </div>
               </div>
-            </Fragment>
-          )}
-        </div>
-      </div>
-      <div className="h-60"></div>
-    </Container>
+            )}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-ink-100 pt-6 text-sm sm:flex-row">
+            <Button href="/manage-reservation" variant="ghost" size="sm">
+              Manage or cancel this reservation
+            </Button>
+            <Button href="/" variant="ghost" size="sm" icon="home">
+              Back to home
+            </Button>
+          </div>
+        </SuccessPanel>
+      </Container>
+    </div>
   );
 };
 

@@ -1,10 +1,9 @@
 'use client';
 
-import Spinner from '@/components/anim/Spinner';
 import AuthLayout from '@/components/layout/AuthLayout';
-import Container from '@/components/layout/Container';
-import HeadingOne from '@/components/typography/HeadingOne';
-import StyledButton from '@/components/ui/StyledButton';
+import { TextField } from '@/components/forms/Field';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthProvider';
 import { useToast } from '@/context/ToastContext';
 import { authClient } from '@/lib/auth/authClient';
@@ -109,61 +108,80 @@ const Login = () => {
       logout();
     } catch (err) {
       handleError(
-        err.message || 'Could not send a new verification email. Please try again.'
+        err.message ||
+          'Could not send a new verification email. Please try again.'
       );
     }
   };
 
   return (
-    <AuthLayout>
-      <Container classes="my-8">
-        <HeadingOne classes="mb-10 text-center">Login</HeadingOne>
-        <form onSubmit={handleSignin}>
-          <div className="mb-8">
-            <label className="block">Email Address</label>
-            <input
-              type="email"
-              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="mb-8">
-            <label className="block">Password</label>
-            <input
-              type="password"
-              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <div className="*:w-full">
-            <StyledButton btnText="Login" isSubmitBtn={true} />
-          </div>
-        </form>
-        <div className="mt-4 mb-6">
-          <Link href="/reset-password" className="text-base">
-            Forgot Password?
-          </Link>
-        </div>
-        <div className="text-center">
-          <Link href="/signup" className="text-xl underline">
-            Create Account
-          </Link>
-        </div>
-        {loading && (
-          <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-            <Spinner
-              spinnerColor="text-primary"
-              spinnerHeight="h-1/5"
-              spinnerWidth="w-1/5"
-            />
-          </div>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Log in to see and manage your reservations and bookings."
+    >
+      <form onSubmit={handleSignin} className="space-y-5" noValidate={false}>
+        {error && (
+          <Alert tone="error" title="We couldn't log you in">
+            {error}
+          </Alert>
         )}
-      </Container>
+        <TextField
+          id="login-email"
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between gap-3">
+            <label htmlFor="login-password" className="form-label mb-0">
+              Password
+            </label>
+            <Link href="/reset-password" className="link text-sm">
+              Forgot password?
+            </Link>
+          </div>
+          <input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            className="form-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          loading={loading}
+          loadingText="Please wait…"
+        >
+          Log in
+        </Button>
+      </form>
+      <p className="mt-8 border-t border-ink-100 pt-6 text-center text-sm text-ink-600">
+        New to Beverly Hills Hotel?{' '}
+        <Link
+          href={
+            redirectTo !== '/'
+              ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}`
+              : '/signup'
+          }
+          className="link"
+        >
+          Create an account
+        </Link>
+      </p>
+      <p className="mt-3 text-center text-sm text-ink-600">
+        You can also book without an account.{' '}
+        <Link href="/make-reservation" className="link">
+          Book as a guest
+        </Link>
+      </p>
     </AuthLayout>
   );
 };
