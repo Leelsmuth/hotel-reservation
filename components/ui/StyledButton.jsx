@@ -1,26 +1,20 @@
-import { Fragment } from 'react';
+import Button from './Button';
 
-const StyledButton = ({ isSubmitBtn = false, clickHandler, btnText }) => {
-  return (
-    <Fragment>
-      {isSubmitBtn ? (
-        <button
-          type="submit"
-          className="bg-alternate text-black border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
-        >
-          {btnText}
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="bg-alternate text-black border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
-          onClick={clickHandler}
-        >
-          {btnText}
-        </button>
-      )}
-    </Fragment>
-  );
-};
+/** Primary (gold) button. Kept for existing call sites; prefer <Button />. */
+const StyledButton = ({
+  isSubmitBtn = false,
+  clickHandler,
+  btnText,
+  ...rest
+}) => (
+  <Button
+    type={isSubmitBtn ? 'submit' : 'button'}
+    onClick={isSubmitBtn ? undefined : clickHandler}
+    variant="primary"
+    {...rest}
+  >
+    {btnText}
+  </Button>
+);
 
 export default StyledButton;

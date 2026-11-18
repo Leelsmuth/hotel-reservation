@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthProvider';
+import LoadingState from '../ui/LoadingState';
 
 const withAuth = (WrappedComponent) => {
   // Create a new component with authentication
@@ -21,11 +22,7 @@ const withAuth = (WrappedComponent) => {
     }, [user, loading, router]);
 
     if (loading) {
-      return (
-        <div className="min-h-screen pb-5 md:pb-10 lg:pb-20 px-5 md:px-10 lg:px-28 font-[family-name:var(--font-manrope)] max-w-screen-lg mx-auto">
-          <div className="text-2xl font-medium">Loading...</div>
-        </div>
-      );
+      return <LoadingState label="Loading your account…" className="min-h-[60vh]" />;
     }
 
     return user ? <WrappedComponent {...props} /> : null;

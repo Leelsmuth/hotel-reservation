@@ -1,15 +1,18 @@
 'use client';
 
-import Spinner from '@/components/anim/Spinner';
-import RoomHomeCard from '@/components/cards/RoomHomeCard';
-import Container from '@/components/layout/Container';
 import ConfirmationModal from '@/components/toast/ConfirmationModal ';
 import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
-import HeadingOne from '@/components/typography/HeadingOne';
-import HeadingTwo from '@/components/typography/HeadingTwo';
-import AltStyledButton from '@/components/ui/AltStyledButton';
-import StyledButton from '@/components/ui/StyledButton';
-import StyledLink from '@/components/ui/StyledLink';
+import Container from '@/components/layout/Container';
+import PageHeader from '@/components/ui/PageHeader';
+import StaySummary from '@/components/booking/StaySummary';
+import BookingPolicies from '@/components/booking/BookingPolicies';
+import { TextField } from '@/components/forms/Field';
+import Alert from '@/components/ui/Alert';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import EmptyState from '@/components/ui/EmptyState';
+import Icon from '@/components/ui/Icon';
+import LoadingState from '@/components/ui/LoadingState';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
 import { useToast } from '@/context/ToastContext';
@@ -18,11 +21,12 @@ import {
   ROOM_MAIN_PICTURES,
   ROOM_TYPES_NAMES,
 } from '@/lib/static/roomLegend';
+import { getRoomByType } from '@/lib/static/roomCatalog';
 import { handleError } from '@/lib/toast/handleError';
 import { handleSuccess } from '@/lib/toast/handleSuccess';
-import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Fragment, useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 
 const ManageReservation = () => {
   const router = useRouter();
@@ -53,8 +57,11 @@ const ManageReservation = () => {
 
     try {
       setIsFetching(true);
+      setError('');
       const response = await fetch(
-        `/api/rooms/reserve?bookingId=${bookingId.current.value.trim()}&email=${email.current.value.trim()}`,
+        `/api/rooms/reserve?bookingId=${encodeURIComponent(
+          bookingId.current.value.trim()
+        )}&email=${encodeURIComponent(email.current.value.trim())}`,
         {
           method: 'GET',
         }
@@ -69,7 +76,11 @@ const ManageReservation = () => {
           );
           return;
         }
-        setError(`Error: ${response.statusText}`);
+        setReservationDetails(null);
+        setIsFetching(false);
+        setError(
+          `We couldn't look up your booking right now (${response.status} ${response.statusText}). Please try again.`
+        );
         return;
       }
 
@@ -180,324 +191,275 @@ const ManageReservation = () => {
     }
   };
 
+  const status = reservationDetails?.bookingStatus;
+  const statusBadge =
+    status === RESERVATION_STATUS.RESERVED ? (
+      <Badge tone="warning">Awaiting payment</Badge>
+    ) : status === RESERVATION_STATUS.BOOKED ? (
+      <Badge tone="success">
+        <Icon name="check" className="h-3.5 w-3.5" strokeWidth={2.5} />
+        Paid &amp; confirmed
+      </Badge>
+    ) : status === RESERVATION_STATUS.CANCELLED ? (
+      <Badge tone="neutral">Cancelled</Badge>
+    ) : null;
+
   return (
-    <Container classes="min-h-[70vh]">
-      <div className="text-right mt-14 mb-20">
-        <StyledLink linkText="New Reservation" path="/make-reservation" />
-      </div>
-      <HeadingOne classes="text-center mb-3 uppercase mt-8">
-        Find Your reservation
-      </HeadingOne>
-      <div className="max-w-96 mx-auto mb-4">
-        <form onSubmit={getReservationDetails}>
-          <div className="mb-6">
-            <label className="block text-lg">Booking/Reference ID</label>
-            <input
-              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              type="text"
-              required
-              ref={bookingId}
-            />
-          </div>
-          <div className="mb-6">
-            <label className="block text-lg">Email</label>
-            <input
-              className="border w-full text-xl px-5 py-4 rounded-xl border-gray-400"
-              type="email"
-              required
-              ref={email}
-            />
-          </div>
-          <div className="mx-auto w-max">
-            <StyledButton isSubmitBtn={true} btnText="Search" />
-          </div>
-        </form>
-      </div>
-      {isFetching === true && (
-        <div className="mt-10 text-center max-w-screen-lg mx-auto flex justify-center">
-          <Spinner
-            spinnerColor="text-primary"
-            spinnerHeight="h-1/5"
-            spinnerWidth="w-1/5"
-          />
-        </div>
-      )}
-      {isFetching === false && !reservationDetails && (
-        <div className="max-w-96 mx-auto mb-4 mt-10 uppercase font-semibold text-red-500 text-center">
-          {error}
-        </div>
-      )}
-      {isFetching === false && reservationDetails && (
-        <Container>
-          <div className="max-w-screen-md mx-auto">
-            <hr />
-            <div className="text-center text-4xl my-4">
-              Reservation details{' '}
-              <span className="text-primary">
-                ({reservationDetails.bookingId})
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6 text-center">
-              <div>
-                <div>Check in</div>
-                <div className="text-primary text-xl underline">
-                  {reservationDetails.bookingDates.bookedFrom}
-                </div>
-              </div>
-              <div>
-                <div>Check out</div>
-                <div className="text-primary text-xl underline">
-                  {reservationDetails.bookingDates.bookedUntil}
-                </div>
-              </div>
-              <div>
-                <div>Room & Guest</div>
-                <div className="text-primary text-xl underline">
-                  1 room, {reservationDetails.guestCount} guests
-                </div>
-              </div>
-            </div>
-            <hr />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 mb-10 items-center">
-              <div>
-                <div className="text-center text-primary">
-                  <h2 className="text-5xl font-bold">
-                    {ROOM_TYPES_NAMES[reservationDetails.roomTypeId]}
-                  </h2>
-                  <div className="mb-5 text-3xl">
-                    ${reservationDetails.roomPrice} per night
-                  </div>
-                </div>
-                <div className="flex gap-6 mt-8 mb-3 flex-wrap justify-between items-center">
-                  <div>
-                    <Image
-                      src="/amenities/icons/ic_bedroom.svg"
-                      alt=""
-                      height={32}
-                      width={28}
-                      className="w-auto object-contain"
-                    />
-                    <div className="mt-3">1 Bedroom</div>
-                  </div>
-                  <div className="flex gap-8 items-center text-primary h-full">
-                    <Image
-                      src="/amenities/icons/ionic-md-person.svg"
-                      alt=""
-                      height={60}
-                      width={40}
-                      className="object-cover h-full w-auto"
-                    />
-                    <div className="font-bold uppercase">Up to 4 guests</div>
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-3xl overflow-hidden">
-                <Image
-                  src={ROOM_MAIN_PICTURES[reservationDetails.roomTypeId]}
-                  alt={ROOM_TYPES_NAMES[reservationDetails.roomTypeId]}
-                  width={400}
-                  height={350}
-                  className="w-full"
-                />
-              </div>
-            </div>
-            <div className="text-2xl leading-8 text-neutral-500">
-              <p className="mb-6">
-                Oceanfront studios offering unparalleled beachfront living
-                (530-565 sq. ft.)
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Manage booking' },
+        ]}
+        eyebrow="Manage booking"
+        title="Find your booking"
+        description="Look up a reservation or booking with your booking ID and the email you used. You can pay for it or cancel it here."
+      />
+
+      <Container classes="py-10 sm:py-12 lg:pb-20">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-12">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <form
+              onSubmit={getReservationDetails}
+              className="card space-y-5 p-5 sm:p-6"
+              aria-labelledby="lookup-title"
+            >
+              <h2
+                id="lookup-title"
+                className="font-display text-xl font-semibold text-ink-900"
+              >
+                Look up a booking
+              </h2>
+              <TextField
+                id="lookup-booking-id"
+                label="Booking ID"
+                hint="The 10-character code in your confirmation email."
+                type="text"
+                required
+                inputRef={bookingId}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                inputClassName="font-mono uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal placeholder:font-sans"
+              />
+              <TextField
+                id="lookup-email"
+                label="Email"
+                type="email"
+                required
+                inputRef={email}
+                autoComplete="email"
+              />
+              <Button
+                type="submit"
+                size="lg"
+                fullWidth
+                icon="search"
+                loading={isFetching === true}
+                loadingText="Searching…"
+              >
+                Find booking
+              </Button>
+            </form>
+            {user && (
+              <p className="mt-4 px-1 text-sm text-ink-600">
+                Signed in? All your reservations and bookings are in{' '}
+                <Link href="/profile" className="link">
+                  My account
+                </Link>
+                .
               </p>
-              <div>
-                <div>WHAT’S INCLUDED? </div>
-                <ul className="ms-4">
-                  <li>Luxurious accomodations</li>
-                  <li>Complimentary wireless internet access</li>
-                </ul>
+            )}
+          </div>
+
+          <div aria-live="polite">
+            {isFetching === true ? (
+              <LoadingState
+                label="Looking up your booking…"
+                className="card min-h-[320px]"
+              />
+            ) : isFetching === false && !reservationDetails && error ? (
+              <Alert tone="error" title="Booking not found">
+                {error}
+              </Alert>
+            ) : isFetching === false && reservationDetails ? (
+              <div className="space-y-6">
+                {status === RESERVATION_STATUS.RESERVED && (
+                  <Alert tone="warning" title="This reservation isn't paid yet">
+                    Reservations are held for 1 hour. Pay now to confirm your
+                    booking.
+                  </Alert>
+                )}
+                {status === RESERVATION_STATUS.CANCELLED && (
+                  <Alert tone="neutral" title="This reservation was cancelled">
+                    The room has been released. You're welcome to make a new
+                    reservation.
+                  </Alert>
+                )}
+
+                <StaySummary
+                  heading="Your stay"
+                  room={
+                    getRoomByType(reservationDetails.roomTypeId) ?? {
+                      name: ROOM_TYPES_NAMES[reservationDetails.roomTypeId],
+                      image: ROOM_MAIN_PICTURES[reservationDetails.roomTypeId],
+                    }
+                  }
+                  badge={statusBadge}
+                  checkIn={reservationDetails.bookingDates.bookedFrom}
+                  checkOut={reservationDetails.bookingDates.bookedUntil}
+                  nights={reservationDetails.nightsCount}
+                  guests={reservationDetails.guestCount}
+                  bookingId={reservationDetails.bookingId}
+                  price={{
+                    roomPrice: reservationDetails.roomPrice,
+                    nights: reservationDetails.nightsCount,
+                    discount: reservationDetails.discount,
+                    discountAmount: reservationDetails.discountAmount,
+                    tax: reservationDetails.tax,
+                    total: reservationDetails.totalPrice,
+                    totalLabel:
+                      status === RESERVATION_STATUS.BOOKED
+                        ? 'Total paid (CAD)'
+                        : 'Total (CAD)',
+                  }}
+                />
+
+                {status === RESERVATION_STATUS.RESERVED && (
+                  <section
+                    aria-labelledby="pay-title"
+                    className="card p-5 sm:p-6"
+                  >
+                    <h2
+                      id="pay-title"
+                      className="font-display text-xl font-semibold text-ink-900"
+                    >
+                      Pay to confirm your booking
+                    </h2>
+                    {user ? (
+                      <Button
+                        size="lg"
+                        fullWidth
+                        className="mt-4"
+                        onClick={bookingHandler}
+                        iconRight="arrow-right"
+                      >
+                        Continue to payment
+                      </Button>
+                    ) : (
+                      <div className="mt-4 space-y-4">
+                        <Button
+                          size="lg"
+                          fullWidth
+                          onClick={bookingHandler}
+                          iconRight="arrow-right"
+                        >
+                          Continue to payment as a guest
+                        </Button>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <Button
+                            variant="secondary"
+                            onClick={handleBookingLogin}
+                          >
+                            Log in
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={handleBookingSignup}
+                          >
+                            Create an account
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-6 flex flex-col gap-3 border-t border-ink-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-ink-600">
+                        Changed your plans? Cancelling an unpaid reservation is
+                        free.
+                      </p>
+                      <Button
+                        variant="danger-outline"
+                        size="sm"
+                        onClick={() => openModal(false)}
+                      >
+                        Cancel reservation
+                      </Button>
+                    </div>
+                  </section>
+                )}
+
+                {status === RESERVATION_STATUS.BOOKED && (
+                  <section
+                    aria-labelledby="cancel-title"
+                    className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+                  >
+                    <div>
+                      <h2
+                        id="cancel-title"
+                        className="font-semibold text-ink-900"
+                      >
+                        Need to cancel?
+                      </h2>
+                      <p className="mt-1 text-sm text-ink-600">
+                        A 30% cancellation fee applies; 70% of what you paid is
+                        refunded.
+                      </p>
+                    </div>
+                    <Button
+                      variant="danger-outline"
+                      onClick={() => openModal(true)}
+                    >
+                      Cancel booking
+                    </Button>
+                  </section>
+                )}
+
+                <section
+                  aria-labelledby="included-title"
+                  className="card p-5 sm:p-6"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2
+                      id="included-title"
+                      className="font-display text-xl font-semibold text-ink-900"
+                    >
+                      Policies & what's included
+                    </h2>
+                    <button
+                      type="button"
+                      className="link text-sm"
+                      onClick={() => setIsRoomModalOpen(true)}
+                    >
+                      See all amenities
+                    </button>
+                  </div>
+                  <BookingPolicies compact className="mt-5" />
+                </section>
+
                 <RoomDetailsModal
                   isOpen={isRoomModalOpen}
                   onClose={() => setIsRoomModalOpen(false)}
                 />
-                <button
-                  type="button"
-                  className="text-primary font-bold text-base uppercase my-6"
-                  onClick={() => setIsRoomModalOpen(true)}
-                >
-                  View More +
-                </button>
+                <ConfirmationModal
+                  isOpen={isModalOpen}
+                  onClose={closeModal}
+                  onConfirm={cancelReservation}
+                  isBooking={isBooking}
+                  price={reservationDetails.totalPrice}
+                />
               </div>
-              <hr />
-              <div className="my-6">
-                <h3 className="uppercase">Policies</h3>
-                <div className="mb-5 text-black">
-                  <h4 className="font-semibold">Guarantee Policy </h4>
-                  <p className="text-xl">
-                    Credit Card is required at the time of booking.
-                  </p>
-                </div>
-                <div className="mb-10 text-black">
-                  <h4 className="font-semibold">Cancel Policy</h4>
-                  {/* <p className="text-xl">
-                    Customers can only reserve a room for 1hr with their email
-                    address, or else they will forfeit the room. The hotel will
-                    offer free cancellation up to 48 hours before check- in
-                    otherwise a penalty charge of 30% on initial booking cost
-                    will be applied.
-                  </p> */}
-                  <p className="text-xl">
-                    Customers can only reserve a room for 1hr with their email
-                    address, or else they will forfeit the room. All bookings
-                    are final. Booking cancellation shall attract penalty charge
-                    of 30% on initial booking cost.
-                  </p>
-                </div>
-                <div>
-                  <div className="grid grid-cols-2 mb-4">
-                    <div>
-                      {reservationDetails?.roomPrice} x{' '}
-                      {reservationDetails?.nightsCount} nights
-                    </div>
-                    <div className="text-right">
-                      $
-                      {(
-                        reservationDetails?.roomPrice *
-                        reservationDetails?.nightsCount
-                      ).toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 mb-4">
-                    <div>Taxes and fees</div>
-                    <div className="text-right">
-                      ${reservationDetails?.tax.toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 mb-4">
-                    <div>Discount</div>
-                    <div className="text-right">
-                      ${reservationDetails?.discountAmount.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <hr />
-              <div className="my-6">
-                <div className="mb-8">
-                  <div className="grid grid-cols-2">
-                    <div>Total CAD (Taxes included)</div>
-                    <div className="text-right">
-                      ${reservationDetails?.totalPrice.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  {reservationDetails.bookingStatus ===
-                    RESERVATION_STATUS.RESERVED && (
-                    <div className="grid grid-cols-1 gap-4 max-w-[400px] mx-auto">
-                      {user ? (
-                        <StyledButton
-                          btnText="Proceed to Booking"
-                          clickHandler={bookingHandler}
-                        />
-                      ) : (
-                        <div>
-                          <div className="text-xl mb-2">
-                            Proceed to Booking:
-                          </div>
-                          <div className=" flex flex-col gap-4 justify-center px-4">
-                            <StyledButton
-                              btnText="Existing customer? Login"
-                              clickHandler={handleBookingLogin}
-                            />
-                            <AltStyledButton
-                              btnText="New? Create account"
-                              clickHandler={handleBookingSignup}
-                            />
-                            <StyledButton
-                              btnText="Continue as Guest"
-                              clickHandler={bookingHandler}
-                            />
-                          </div>
-                        </div>
-                      )}
-                      <div className="text-alternate font-bold text-2xl text-center">
-                        OR
-                      </div>
-                      <div className="*:w-full">
-                        <AltStyledButton
-                          btnText="Cancel Reservation"
-                          clickHandler={() => openModal(false)}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {reservationDetails.bookingStatus ===
-                    RESERVATION_STATUS.BOOKED && (
-                    <div className="max-w-[400px] mx-auto *:w-full">
-                      <StyledButton
-                        btnText="Cancel Booking"
-                        clickHandler={() => openModal(true)}
-                      />
-                    </div>
-                  )}
-                  {reservationDetails.bookingStatus ===
-                    RESERVATION_STATUS.CANCELLED && (
-                    <div className="text-center uppercase font-bold bg-alternate text-white p-4 max-w-[400px] mx-auto *:w-full">
-                      Reservation Cancelled
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <ConfirmationModal
-              isOpen={isModalOpen}
-              onClose={closeModal}
-              onConfirm={cancelReservation}
-              isBooking={isBooking}
-              price={reservationDetails.totalPrice}
-            />
+            ) : (
+              <EmptyState icon="search" title="Your booking will appear here">
+                Enter your booking ID and email to see your dates, price and
+                options. Your booking ID is in the confirmation email we sent
+                you.
+              </EmptyState>
+            )}
           </div>
-        </Container>
-      )}
-      {loading && (
-        <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-          <Spinner
-            spinnerColor="text-primary"
-            spinnerHeight="h-1/5"
-            spinnerWidth="w-1/5"
-          />
         </div>
-      )}
-      <hr className="mt-16" />
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold mb-6 uppercase">
-          Check out our rooms
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <RoomHomeCard
-            imageName="deluxe-main"
-            roomPath="deluxe-room"
-            title="Deluxe Room"
-            price="150"
-          />
-          <RoomHomeCard
-            imageName="queen-main"
-            roomPath="queen-room"
-            title="Queen Room"
-            price="120"
-          />
-          <RoomHomeCard
-            imageName="king-main"
-            roomPath="king-room"
-            title="King Room"
-            price="135"
-          />
-          <RoomHomeCard
-            imageName="presidential-main"
-            roomPath="presidential-suite"
-            title="Presidential Suite"
-            price="350"
-          />
-        </div>
-      </div>
-    </Container>
+      </Container>
+      {loading && <LoadingState overlay label="Cancelling…" />}
+    </>
   );
 };
 

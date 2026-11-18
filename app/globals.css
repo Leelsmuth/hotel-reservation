@@ -2,28 +2,258 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+/* ------------------------------------------------------------------------ */
+/* Base                                                                      */
+/* ------------------------------------------------------------------------ */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    /* Anchored sections (e.g. #search) clear the sticky header */
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    @apply bg-white font-sans text-base leading-relaxed text-ink-900 antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-balance text-ink-900;
+  }
+
+  /* One visible focus style for everything that can take keyboard focus.
+     gold-700 has 5.6:1 contrast on white, and the offset keeps it visible
+     on dark and photo backgrounds too. */
+  :focus-visible {
+    outline: 2px solid theme('colors.gold.700');
+    outline-offset: 2px;
+  }
+
+  .on-dark :focus-visible {
+    outline-color: theme('colors.gold.300');
+  }
+
+  ::selection {
+    @apply bg-gold-200 text-ink-900;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
+
+/* ------------------------------------------------------------------------ */
+/* Components: form controls                                                 */
+/* Use these classes for every input/select so forms look the same          */
+/* everywhere: .form-label, .form-input, .form-select, .form-hint,           */
+/* .form-error. Borders are ink-400 (3.6:1 on white, meets WCAG 1.4.11).     */
+/* ------------------------------------------------------------------------ */
+
+@layer components {
+  .form-label {
+    @apply mb-1.5 block text-sm font-semibold text-ink-800;
+  }
+
+  .form-input,
+  .form-select {
+    @apply block w-full rounded-lg border border-ink-400 bg-white px-3.5 py-2.5 text-base text-ink-900 shadow-sm transition-colors placeholder:text-ink-500;
+    min-height: 2.75rem; /* 44px touch target */
+  }
+
+  .form-input:hover,
+  .form-select:hover {
+    @apply border-ink-600;
+  }
+
+  .form-input:focus,
+  .form-select:focus {
+    @apply border-gold-700 outline-none ring-2 ring-gold-400/60;
+  }
+
+  .form-input[aria-invalid='true'],
+  .form-select[aria-invalid='true'] {
+    @apply border-red-700 ring-red-200;
+  }
+
+  input.form-input:read-only,
+  textarea.form-input:read-only {
+    @apply cursor-default border-ink-200 bg-ink-50 text-ink-700 shadow-none;
+  }
+
+  .form-input:disabled,
+  .form-select:disabled {
+    @apply cursor-not-allowed bg-ink-50 text-ink-500;
+  }
+
+  .form-select {
+    @apply appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2357514A'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+  }
+
+  .form-hint {
+    @apply mt-1.5 text-sm text-ink-600;
+  }
+
+  .form-error {
+    @apply mt-1.5 flex items-start gap-1.5 text-sm font-medium text-red-700;
+  }
+
+  /* Text links inside body copy */
+  .link {
+    @apply font-semibold text-gold-700 underline decoration-gold-400 decoration-2 underline-offset-4 transition-colors hover:text-ink-900 hover:decoration-ink-900;
+  }
+
+  /* Small uppercase label above headings */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-gold-700;
+  }
+
+  .card {
+    @apply rounded-2xl border border-ink-100 bg-white shadow-card;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Third-party widgets. Deliberately NOT inside @layer: Tailwind drops layered */
+/* rules whose class names don't appear in our source files, and these class  */
+/* names only exist inside the libraries.                                     */
+/* ------------------------------------------------------------------------ */
+
+/* ---------------------------------------------------------------------- */
+/* react-phone-number-input: the wrapper gets .form-input, so the inner   */
+/* <input> must not draw a second box.                                    */
+/* ---------------------------------------------------------------------- */
+.PhoneInput.form-input {
+  @apply flex items-center gap-3 py-0;
+}
+
+.PhoneInput.form-input:focus-within {
+  @apply border-gold-700 ring-2 ring-gold-400/60;
+}
+
+.PhoneInput .PhoneInputInput {
+  @apply min-w-0 flex-1 self-stretch border-0 bg-transparent py-2.5 text-base text-ink-900 placeholder:text-ink-500;
+  outline: none;
+}
+
+.PhoneInput .PhoneInputInput:focus-visible {
+  outline: none;
+}
+
+/* ---------------------------------------------------------------------- */
+/* react-date-range: match fonts, colours and sizes to the rest of the UI. */
+/* Scoped to .date-popover so these win over the library's own CSS, which */
+/* is loaded after this file.                                             */
+/* ---------------------------------------------------------------------- */
+.date-popover .rdrCalendarWrapper {
+  @apply flex w-full font-sans text-ink-900;
+  font-size: 14px;
+}
+
+.date-popover .rdrMonths,
+.date-popover .rdrMonth {
+  width: 100%;
+}
+
+.date-popover .rdrMonth {
+  padding: 0 0.75rem 0.5rem;
+}
+
+.date-popover .rdrMonthAndYearWrapper {
+  padding-top: 0.5rem;
+}
+
+.date-popover .rdrMonthAndYearPickers select {
+  @apply font-semibold text-ink-900;
+  font-size: 14px;
+}
+
+.date-popover .rdrNextPrevButton {
+  @apply h-9 w-9 rounded-lg bg-ink-50 hover:bg-ink-100;
+}
+
+.date-popover .rdrDay {
+  height: 2.75rem;
+}
+
+.date-popover .rdrDayNumber span {
+  @apply font-medium text-ink-900;
+  font-size: 14px;
+}
+
+/* Days from the neighbouring month that pad out each grid ("passive" days)
+   can't be clicked in react-date-range. Don't draw them: they looked like
+   real dates, and the next month is shown alongside anyway. */
+.date-popover .rdrDayPassive {
+  visibility: hidden;
+}
+
+/* Two months: side by side (tablet/desktop) or stacked (phones) */
+.date-popover .rdrMonthsHorizontal .rdrMonth + .rdrMonth {
+  border-left: 1px solid theme('colors.ink.100');
+}
+
+.date-popover .rdrMonthsVertical .rdrMonth + .rdrMonth {
+  border-top: 1px solid theme('colors.ink.100');
+}
+
+.date-popover .rdrMonthName {
+  @apply px-1 pb-1 pt-3 font-semibold text-ink-900;
+  font-size: 14px;
+}
+
+/* Selected range: solid white on gold-800 (8.9:1) */
+.date-popover .rdrDay .rdrSelected ~ .rdrDayNumber span,
+.date-popover .rdrDay .rdrInRange ~ .rdrDayNumber span,
+.date-popover .rdrDay .rdrStartEdge ~ .rdrDayNumber span,
+.date-popover .rdrDay .rdrEndEdge ~ .rdrDayNumber span {
+  color: #fff;
+  font-weight: 600;
+}
+
+.date-popover .rdrDayToday .rdrDayNumber span:after {
+  background: theme('colors.gold.600');
+}
+
+.date-popover .rdrWeekDay {
+  @apply font-semibold text-ink-600;
+  font-size: 12px;
+}
+
+.date-popover .rdrDayDisabled {
+  background: transparent;
+}
+
+.date-popover .rdrDayDisabled .rdrDayNumber span {
+  @apply text-ink-500 line-through decoration-ink-400;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Utilities                                                                 */
+/* ------------------------------------------------------------------------ */
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
 
-@layer utilities {
-  .bg-blur::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-color: inherit;
-    filter: blur(10px);
-    z-index: 0;
-  }
-
-  .bg-blur {
-    position: relative;
-    z-index: 1;
+  .text-pretty {
+    text-wrap: pretty;
   }
 }

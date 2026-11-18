@@ -43,9 +43,13 @@ export const BookingProvider = ({ children }) => {
     TWENTYONE: 0,
     THIRTYPLUS: 0,
   });
+  // False until the first discount values arrive, so the UI doesn't
+  // advertise "0% off" while they load
+  const [discountsLoaded, setDiscountsLoaded] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeToDiscounts((discountData) => {
+      setDiscountsLoaded(true);
       setDiscounts({
         ELEVEN: discountData.ELEVEN || 0,
         TWENTYONE: discountData.TWENTYONE || 0,
@@ -189,6 +193,10 @@ export const BookingProvider = ({ children }) => {
     <BookingContext.Provider
       value={{
         bookingDetails,
+        // Length-of-stay discounts in percent ({ ELEVEN, TWENTYONE, THIRTYPLUS }),
+        // for explaining prices. The server applies them itself.
+        discounts,
+        discountsLoaded,
         updateDates,
         updateRoomSelection,
         updateGuestCount,

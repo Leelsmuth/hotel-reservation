@@ -3,25 +3,37 @@
 import withAuth from '@/components/hoc/withAuth';
 import Container from '@/components/layout/Container';
 import MainLayout from '@/components/layout/MainLayout';
-import HeadingOne from '@/components/typography/HeadingOne';
-import HeadingTwo from '@/components/typography/HeadingTwo';
+import PageHeader from '@/components/ui/PageHeader';
+import Icon from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthProvider';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
-const NavLink = ({ href, children, ...props }) => {
-  const pathname = usePathname();
+export const ACCOUNT_NAV = [
+  { href: '/profile', label: 'Overview', icon: 'home' },
+  { href: '/profile/reservations', label: 'Awaiting payment', icon: 'clock' },
+  { href: '/profile/bookings', label: 'Confirmed bookings', icon: 'calendar' },
+  { href: '/profile/change-password', label: 'Password', icon: 'key' },
+];
 
+const AccountNavLink = ({ href, icon, children }) => {
+  const pathname = usePathname();
   const isActive = pathname === href;
 
   return (
     <Link
       href={href}
-      {...props}
-      className={`${
-        isActive ? 'bg-alternate' : ''
-      } hover:bg-alternate/30 py-3 inline-block w-full px-3 sm:px-5 mb-3`}
+      aria-current={isActive ? 'page' : undefined}
+      className={`flex min-h-11 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3.5 text-sm font-medium transition-colors ${
+        isActive
+          ? 'bg-ink-900 text-white'
+          : 'text-ink-700 hover:bg-ink-100 hover:text-ink-900'
+      }`}
     >
+      <Icon
+        name={icon}
+        className={`h-5 w-5 ${isActive ? 'text-gold-300' : 'text-ink-500'}`}
+      />
       {children}
     </Link>
   );
@@ -30,46 +42,46 @@ const NavLink = ({ href, children, ...props }) => {
 const PageLayout = ({ children }) => {
   const { userData, logout } = useAuth();
   const router = useRouter();
+  const firstName = userData?.fullName?.split(' ')[0];
 
   return (
     <MainLayout>
-      <Container>
-        <div className="flex flex-col sm:flex-row gap-6 mt-10">
-          <ul className="sm:w-[250px] grid sm:block grid-cols-2 *:text-sm *:sm:text-lg">
-            <li>
-              <NavLink href="/profile">Dashboard</NavLink>
-            </li>
-            <li>
-              <NavLink href="/profile/reservations">
-                Active Reservations
-              </NavLink>
-            </li>
-            <li>
-              <NavLink href="/profile/bookings">Active Bookings</NavLink>
-            </li>
-            {/* <li>
-              <NavLink href="/profile/change-password">Change Password</NavLink>
-            </li> */}
-            <li>
-              <button
-                type="button"
-                className="hover:bg-alternate/30 py-3 inline-block w-full px-5 mb-3 text-left"
-                onClick={() => {
-                  logout();
-                  router.push('/login');
-                }}
-              >
-                Logout
-              </button>
-            </li>
-          </ul>
-          <div className="flex-1">
-            <div className="text-center mb-6">
-              <HeadingOne>Account</HeadingOne>
-              <HeadingTwo>Welcome, {userData.fullName}</HeadingTwo>
-            </div>
-            <div>{children}</div>
-          </div>
+      <PageHeader
+        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'My account' }]}
+        eyebrow="My account"
+        title={firstName ? `Welcome back, ${firstName}` : 'Welcome back'}
+        description="Pay for reservations, view your confirmed bookings and manage your account."
+      />
+      <Container classes="py-10 sm:py-12 lg:pb-20">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
+          <nav
+            aria-label="Account"
+            className="lg:sticky lg:top-24 lg:self-start"
+          >
+            <ul className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+              {ACCOUNT_NAV.map((item) => (
+                <li key={item.href}>
+                  <AccountNavLink href={item.href} icon={item.icon}>
+                    {item.label}
+                  </AccountNavLink>
+                </li>
+              ))}
+              <li className="lg:mt-4 lg:border-t lg:border-ink-100 lg:pt-4">
+                <button
+                  type="button"
+                  className="flex min-h-11 w-full shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3.5 text-left text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900"
+                  onClick={() => {
+                    logout();
+                    router.push('/login');
+                  }}
+                >
+                  <Icon name="logout" className="h-5 w-5 text-ink-500" />
+                  Log out
+                </button>
+              </li>
+            </ul>
+          </nav>
+          <div className="min-w-0">{children}</div>
         </div>
       </Container>
     </MainLayout>

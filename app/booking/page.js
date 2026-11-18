@@ -1,22 +1,22 @@
 // pages/Booking.js
 'use client';
 
-import Spinner from '@/components/anim/Spinner';
 import Container from '@/components/layout/Container';
 import StripeCheckout from '@/components/payment/StripeCheckout';
-import HeadingOne from '@/components/typography/HeadingOne';
+import BookingSteps from '@/components/booking/BookingSteps';
+import StaySummary from '@/components/booking/StaySummary';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import Icon from '@/components/ui/Icon';
+import LoadingState from '@/components/ui/LoadingState';
+import { getRoomByType } from '@/lib/static/roomCatalog';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
 import { useToast } from '@/context/ToastContext';
-import {
-  RESERVATION_STATUS,
-  ROOM_MAIN_PICTURES,
-  ROOM_TYPES_NAMES,
-} from '@/lib/static/roomLegend';
+import { RESERVATION_STATUS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
 import { handleError } from '@/lib/toast/handleError';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const Booking = () => {
   const router = useRouter();
@@ -144,154 +144,188 @@ const Booking = () => {
     }
   }, [searchParams]);
 
+  const room = bookingDetails ? getRoomByType(bookingDetails.roomTypeId) : null;
+  const missingReservation = !searchParams.get('resId');
+
   return (
-    <Container classes="my-10">
-      {loading ? (
-        <div className="min-h-screen text-center max-w-screen-lg mx-auto">
-          <Spinner
-            spinnerColor="text-primary"
-            spinnerHeight="h-1/5"
-            spinnerWidth="w-1/5"
+    <div className="bg-sand-50/60 pb-16 sm:pb-20">
+      <Container classes="pt-8 sm:pt-10">
+        <BookingSteps current={4} className="mb-8" />
+        <p className="eyebrow mb-2">Secure checkout</p>
+        <h1 className="mb-2 font-display text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+          Confirm and pay
+        </h1>
+        {missingReservation ? (
+          <Alert
+            tone="info"
+            className="mt-6"
+            title="No reservation selected"
+            action={
+              <div className="flex flex-wrap gap-3">
+                <Button size="sm" href="/manage-reservation">
+                  Find my reservation
+                </Button>
+                <Button size="sm" variant="secondary" href="/make-reservation">
+                  Book a room
+                </Button>
+              </div>
+            }
+          >
+            Open this page from your reservation confirmation, or look up your
+            reservation with its booking ID.
+          </Alert>
+        ) : loading || (!bookingDetails && !error) ? (
+          <LoadingState
+            label="Loading your reservation…"
+            className="min-h-[50vh]"
           />
-        </div>
-      ) : (
-        <div>
-          <h1 className="text-4xl text-primary text-center uppercase font-bold">
-            Complete Booking
-          </h1>
-          <div className="text-xl">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6 text-center">
-              <div>
-                <div>Check in</div>
-                <div className="text-primary text-xl underline">
-                  {bookingDetails?.bookingDates.bookedFrom}
-                </div>
-              </div>
-              <div>
-                <div>Check out</div>
-                <div className="text-primary text-xl underline">
-                  {bookingDetails?.bookingDates.bookedUntil}
-                </div>
-              </div>
-              <div>
-                <div>Room & Guest</div>
-                <div className="text-primary text-xl underline">
-                  1 room, {bookingDetails?.guestCount} guests
-                </div>
-              </div>
-            </div>
-            <hr />
-            <div className="my-6">
-              <div className="mb-10 text-black">
-                <h4 className="font-semibold">
-                  By proceeding you agree to the following:
-                </h4>
-                <ul className="text-xl list-disc ms-6">
-                  <li>All bookings are final</li>
-                  <li>
-                    Booking cancellation shall attract penalty charge of 30% on
-                    initial booking cost.
-                  </li>
-                  {/* <li>
-                    The hotel will offer free cancellation up to 48 hours before
-                    check- in otherwise a penalty charge of 30% on initial
-                    booking cost will be applied.
-                  </li> */}
-                </ul>
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold">
-                  {ROOM_TYPES_NAMES[bookingDetails?.roomTypeId]}
-                </h2>
-                <div className="grid grid-cols-2 mb-4">
-                  <div>
-                    {bookingDetails?.roomPrice} x {bookingDetails?.nightsCount}{' '}
-                    nights
+        ) : error && !bookingDetails ? (
+          <Alert
+            tone="error"
+            className="mt-6"
+            title="We couldn't load your reservation"
+            action={
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => fetchReservation(reservationId)}
+              >
+                Try again
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
+        ) : (
+          <div>
+            <p className="max-w-2xl text-ink-600">
+              Your room is reserved. Pay now to confirm your booking.
+            </p>
+
+            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
+              <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start">
+                <StaySummary
+                  heading="Booking summary"
+                  room={
+                    room ?? {
+                      name: ROOM_TYPES_NAMES[bookingDetails?.roomTypeId],
+                    }
+                  }
+                  checkIn={bookingDetails?.bookingDates.bookedFrom}
+                  checkOut={bookingDetails?.bookingDates.bookedUntil}
+                  nights={bookingDetails?.nightsCount}
+                  guests={bookingDetails?.guestCount}
+                  bookingId={bookingId || bookingDetails?.bookingId}
+                  price={{
+                    roomPrice: bookingDetails?.roomPrice,
+                    nights: bookingDetails?.nightsCount,
+                    discount: bookingDetails?.discount,
+                    discountAmount: bookingDetails?.discountAmount,
+                    tax: bookingDetails?.tax,
+                    total: bookingDetails?.totalPrice,
+                    totalLabel: 'Total to pay (CAD)',
+                  }}
+                />
+              </aside>
+              <div className="space-y-6 lg:col-start-1 lg:row-start-1">
+                <section
+                  aria-labelledby="policy-title"
+                  className="card p-5 sm:p-6"
+                >
+                  <h2
+                    id="policy-title"
+                    className="font-display text-xl font-semibold text-ink-900"
+                  >
+                    Before you pay
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-600">
+                    By paying you agree to the following:
+                  </p>
+                  <ul className="mt-4 space-y-3 text-sm text-ink-700">
+                    <li className="flex gap-2.5">
+                      <Icon
+                        name="check"
+                        className="mt-0.5 h-4 w-4 text-gold-700"
+                        strokeWidth={2}
+                      />
+                      All bookings are final.
+                    </li>
+                    <li className="flex gap-2.5">
+                      <Icon
+                        name="check"
+                        className="mt-0.5 h-4 w-4 text-gold-700"
+                        strokeWidth={2}
+                      />
+                      Cancelling a booking incurs a penalty of 30% of the
+                      booking cost.
+                    </li>
+                  </ul>
+                </section>
+
+                <section
+                  aria-labelledby="payment-title"
+                  className="card p-5 sm:p-6"
+                >
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <h2
+                      id="payment-title"
+                      className="font-display text-xl font-semibold text-ink-900"
+                    >
+                      Payment
+                    </h2>
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-ink-600">
+                      <Icon name="lock" className="h-4 w-4 text-green-700" />
+                      Secure payment
+                    </span>
                   </div>
-                  <div className="text-right">
-                    $
-                    {(
-                      bookingDetails?.roomPrice * bookingDetails?.nightsCount
-                    ).toFixed(2)}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 mb-4">
-                  <div>Taxes and fees</div>
-                  <div className="text-right">
-                    ${bookingDetails?.tax.toFixed(2)}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 mb-4">
-                  <div>Discount</div>
-                  <div className="text-right">
-                    ${bookingDetails?.discountAmount.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <hr />
-            <div className="my-6">
-              <div className="mb-8">
-                <div className="grid grid-cols-2">
-                  <div>Total CAD (Taxes included)</div>
-                  <div className="text-right">
-                    ${bookingDetails?.totalPrice.toFixed(2)}
-                  </div>
-                </div>
+                  {!isSubmitting && unconfirmedPayment && (
+                    <Alert
+                      tone="error"
+                      title="Your payment went through, but we couldn't confirm your booking yet."
+                      action={
+                        <Button
+                          size="sm"
+                          variant="dark"
+                          onClick={() =>
+                            completeBooking(unconfirmedPayment.paymentIntent)
+                          }
+                        >
+                          Try again
+                        </Button>
+                      }
+                    >
+                      {unconfirmedPayment.reason && (
+                        <p>{unconfirmedPayment.reason}</p>
+                      )}
+                      <p>
+                        Please don't pay again. Try again, or contact us with
+                        payment reference{' '}
+                        <span className="font-mono font-semibold">
+                          {unconfirmedPayment.paymentIntent.id}
+                        </span>
+                        .
+                      </p>
+                    </Alert>
+                  )}
+                  {!isSubmitting && !unconfirmedPayment && (
+                    <StripeCheckout
+                      // Wait for the reservation so we don't set up a payment for
+                      // one that isn't payable (the page redirects away instead)
+                      reservationId={bookingDetails ? reservationId : null}
+                      onPaymentSuccess={completeBooking} // Pass completeBooking as a callback
+                      amount={bookingDetails?.totalPrice}
+                    />
+                  )}
+                </section>
               </div>
             </div>
           </div>
-          {!isSubmitting && unconfirmedPayment && (
-            <div
-              role="alert"
-              className="rounded-xl border border-red-300 bg-red-50 p-4 text-base text-red-800"
-            >
-              <p className="font-semibold">
-                Your payment went through, but we couldn't confirm your
-                booking yet.
-              </p>
-              {unconfirmedPayment.reason && (
-                <p>{unconfirmedPayment.reason}</p>
-              )}
-              <p className="mb-3">
-                Please don't pay again. Try again, or contact us with payment
-                reference{' '}
-                <span className="font-mono">
-                  {unconfirmedPayment.paymentIntent.id}
-                </span>
-                .
-              </p>
-              <button
-                type="button"
-                className="bg-alternate text-black border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
-                onClick={() => completeBooking(unconfirmedPayment.paymentIntent)}
-              >
-                Try again
-              </button>
-            </div>
-          )}
-          {!isSubmitting && !unconfirmedPayment && (
-            <Fragment>
-              <StripeCheckout
-                // Wait for the reservation so we don't set up a payment for
-                // one that isn't payable (the page redirects away instead)
-                reservationId={bookingDetails ? reservationId : null}
-                onPaymentSuccess={completeBooking} // Pass completeBooking as a callback
-              />
-            </Fragment>
-          )}
-          {isSubmitting && (
-            <div className="min-h-screen flex justify-center items-center max-w-screen-lg mx-auto fixed inset-0">
-              <Spinner
-                spinnerColor="text-primary"
-                spinnerHeight="h-1/5"
-                spinnerWidth="w-1/5"
-              />
-            </div>
-          )}
-        </div>
+        )}
+      </Container>
+      {isSubmitting && (
+        <LoadingState overlay label="Confirming your booking…" />
       )}
-    </Container>
+    </div>
   );
 };
 

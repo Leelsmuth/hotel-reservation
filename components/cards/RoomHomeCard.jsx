@@ -1,27 +1,22 @@
-import Image from 'next/image';
-import Link from 'next/link';
+import RoomCard from './RoomCard';
+import { getRoomByKey } from '@/lib/static/roomCatalog';
 
+/**
+ * Legacy props (imageName="deluxe-main", roomPath, title, price) mapped onto
+ * the shared <RoomCard />. Prefer <RoomCard room={...} /> or <RoomGrid />.
+ */
 const RoomHomeCard = ({ imageName, roomPath, title, price }) => {
-  return (
-    <div className="relative group overflow-hidden cursor-pointer">
-      <Image
-        src={`/rooms/${imageName}.jpg`}
-        alt={title}
-        width={400}
-        height={600}
-        className="object-cover w-full h-full transition-all group-hover:scale-105"
-      />
-      <div className="absolute right-0 top-0 p-2 text-black bg-alternate">
-        ${price} per day
-      </div>
-      <div className="absolute left-0 bottom-0 p-2 text-white text-xl">
-        {title}
-      </div>
-      <Link className="absolute inset-0" href={`/rooms/${roomPath}`}>
-        <span className="sr-only">View {title}</span>
-      </Link>
-    </div>
-  );
+  const key = imageName?.replace(/-main$/, '');
+  const base = getRoomByKey(key);
+  const room = {
+    ...base,
+    name: title ?? base?.name,
+    price: price !== undefined ? Number(price) : base?.price,
+    href: roomPath ? `/rooms/${roomPath}` : base?.href,
+    image: imageName ? `/rooms/${imageName}.jpg` : base?.image,
+    maxGuests: base?.maxGuests ?? 4,
+  };
+  return <RoomCard room={room} />;
 };
 
 export default RoomHomeCard;

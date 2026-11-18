@@ -1,29 +1,31 @@
 import Container from '@/components/layout/Container';
 import MainLayout from '@/components/layout/MainLayout';
-import AltStyledLink from '@/components/ui/AltStyledLink';
+import Button from '@/components/ui/Button';
 
 const NotFound = () => {
   return (
     <MainLayout>
-      <Container>
-        <div className="text-center">
-          <div className="inline-block px-4 text-white uppercase font-semibold rounded-b-full bg-red-400">
-            Error
-          </div>
-          <div className="text-9xl tracking-widest font-bold text-red-600">
-            <span>4</span>
-            <span>0</span>
-            <span>4</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl uppercase">
-            Page not found
-          </h1>
-          <p className="mt-1 text-lg leading-7 text-text-purple font-medium">
-            Sorry, we couldn’t find the page you’re looking for.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
-            <AltStyledLink linkText="Back to Home" path="/" />
-          </div>
+      <Container classes="flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
+        <p
+          className="font-display text-7xl font-semibold text-gold-600 sm:text-8xl"
+          aria-hidden="true"
+        >
+          404
+        </p>
+        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+          Page not found
+        </h1>
+        <p className="mt-3 max-w-md text-ink-600">
+          Sorry, we couldn't find the page you're looking for. It may have
+          moved, or the link may be incorrect.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Button href="/" icon="home">
+            Back to home
+          </Button>
+          <Button href="/rooms" variant="secondary">
+            Browse rooms
+          </Button>
         </div>
       </Container>
     </MainLayout>

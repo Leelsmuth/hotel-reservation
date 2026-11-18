@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 // The /pure entry only loads Stripe.js when loadStripe() is called; the main
 // entry injects it on import, which would hit js.stripe.com in mock mode too.
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -14,13 +13,21 @@ import {
 } from '@stripe/react-stripe-js';
 import { USE_MOCKS } from '@/lib/config/mockMode';
 import MockPaymentForm from './MockPaymentForm';
+import Alert from '../ui/Alert';
+import Button from '../ui/Button';
+import { formatPrice } from '@/lib/helpers/formatters';
+
+export const payLabel = (amount) =>
+  Number.isFinite(Number(amount)) && amount !== undefined && amount !== null
+    ? `Pay ${formatPrice(amount)}`
+    : 'Pay now';
 
 // Stripe.js is not loaded at all in mock mode (no key, works offline)
 const stripePromise = USE_MOCKS
   ? null
   : loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-const PaymentElementForm = ({ onPaymentSuccess }) => {
+const PaymentElementForm = ({ onPaymentSuccess, amount }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState(null);
@@ -56,16 +63,24 @@ const PaymentElementForm = ({ onPaymentSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-5">
       <PaymentElement />
-      <button
+      {errorMessage && (
+        <Alert tone="error" title="Payment failed">
+          {errorMessage}
+        </Alert>
+      )}
+      <Button
         type="submit"
-        className="mt-6 bg-alternate text-black disabled:hover:bg-alternate disabled:hover:text-black disabled:opacity-75 disabled:cursor-not-allowed border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
-        disabled={!stripe || loading}
+        size="lg"
+        fullWidth
+        icon="lock"
+        disabled={!stripe}
+        loading={loading}
+        loadingText="Processing payment…"
       >
-        {loading ? 'Processing...' : 'Pay Now'}
-      </button>
-      {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
+        {payLabel(amount)}
+      </Button>
     </form>
   );
 };
@@ -76,7 +91,11 @@ const STATUS = { LOADING: 'loading', READY: 'ready', ERROR: 'error' };
  * Payment form for a reservation. The server works out the amount from the
  * reservation (the browser only sends which reservation).
  */
-export default function StripeCheckout({ reservationId, onPaymentSuccess }) {
+export default function StripeCheckout({
+  reservationId,
+  onPaymentSuccess,
+  amount,
+}) {
   const [clientSecret, setClientSecret] = useState('');
   const [status, setStatus] = useState(STATUS.LOADING);
   const [error, setError] = useState(null);
@@ -100,7 +119,7 @@ export default function StripeCheckout({ reservationId, onPaymentSuccess }) {
 
         if (!res.ok || !data.clientSecret) {
           throw Object.assign(
-            new Error(data.error || 'We couldn\'t set up the payment.'),
+            new Error(data.error || "We couldn't set up the payment."),
             // 4xx other than 429 won't be fixed by retrying (e.g. the
             // reservation is already paid or its price changed)
             { retryable: res.status >= 500 || res.status === 429 || res.ok }
@@ -117,7 +136,7 @@ export default function StripeCheckout({ reservationId, onPaymentSuccess }) {
           setError({
             message:
               err instanceof TypeError // fetch() itself failed (offline, ...)
-                ? 'We couldn\'t reach the payment service. Check your connection.'
+                ? "We couldn't reach the payment service. Check your connection."
                 : err.message,
             retryable: err.retryable ?? true,
           });
@@ -133,13 +152,26 @@ export default function StripeCheckout({ reservationId, onPaymentSuccess }) {
     };
   }, [reservationId, attempt]);
 
+  // Match Stripe's fields to the app's form controls (see globals.css)
   const appearance = {
     theme: 'stripe',
     variables: {
-      colorPrimary: '#0570de',
-      colorBackground: '#f6f9fc',
-      colorText: '#30313d',
-      fontFamily: 'Ideal Sans, system-ui, sans-serif',
+      colorPrimary: '#81640F',
+      colorBackground: '#ffffff',
+      colorText: '#1C1915',
+      colorTextSecondary: '#57514A',
+      colorDanger: '#B91C1C',
+      borderRadius: '8px',
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+      spacingUnit: '4px',
+    },
+    rules: {
+      '.Input': { borderColor: '#8C857D', boxShadow: 'none' },
+      '.Input:focus': {
+        borderColor: '#81640F',
+        boxShadow: '0 0 0 3px rgba(210, 174, 78, 0.45)',
+      },
+      '.Label': { fontWeight: '600', color: '#2A2621' },
     },
   };
 
@@ -150,26 +182,27 @@ export default function StripeCheckout({ reservationId, onPaymentSuccess }) {
 
   if (status === STATUS.ERROR) {
     return (
-      <div
-        role="alert"
-        className="rounded-xl border border-red-300 bg-red-50 p-4 text-base text-red-800"
+      <Alert
+        tone="error"
+        title="Payment form unavailable"
+        action={
+          error.retryable ? (
+            <Button
+              size="sm"
+              variant="dark"
+              onClick={() => setAttempt((n) => n + 1)}
+            >
+              Try again
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" href="/make-reservation">
+              Make a new reservation
+            </Button>
+          )
+        }
       >
-        <p className="font-semibold">Payment form unavailable</p>
-        <p className="mb-3">{error.message}</p>
-        {error.retryable ? (
-          <button
-            type="button"
-            className="bg-alternate text-black border-black border hover:bg-black hover:text-alternate text-lg transition-colors rounded-xl px-4 py-2"
-            onClick={() => setAttempt((n) => n + 1)}
-          >
-            Try again
-          </button>
-        ) : (
-          <Link href="/make-reservation" className="underline font-semibold">
-            Make a new reservation
-          </Link>
-        )}
-      </div>
+        {error.message}
+      </Alert>
     );
   }
 
@@ -179,13 +212,30 @@ export default function StripeCheckout({ reservationId, onPaymentSuccess }) {
         <MockPaymentForm
           clientSecret={clientSecret}
           onPaymentSuccess={onPaymentSuccess}
+          amount={amount}
         />
       ) : status === STATUS.READY ? (
         <Elements stripe={stripePromise} options={options}>
-          <PaymentElementForm onPaymentSuccess={onPaymentSuccess} />
+          <PaymentElementForm
+            onPaymentSuccess={onPaymentSuccess}
+            amount={amount}
+          />
         </Elements>
       ) : (
-        <p role="status">Loading payment form...</p>
+        <div
+          role="status"
+          className="space-y-3"
+          aria-label="Loading payment form"
+        >
+          <div className="h-11 animate-pulse rounded-lg bg-ink-100" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="h-11 animate-pulse rounded-lg bg-ink-100" />
+            <div className="h-11 animate-pulse rounded-lg bg-ink-100" />
+          </div>
+          <p className="pt-1 text-sm text-ink-600">
+            Loading secure payment form…
+          </p>
+        </div>
       )}
     </div>
   );
