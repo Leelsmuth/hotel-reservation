@@ -5,9 +5,14 @@ import { formatPrice, pluralize } from '@/lib/helpers/formatters';
  * Itemised price: nightly rate × nights, long-stay discount, tax, total.
  * Pass the figures from the server (reservation) or from
  * calculateBookingPrice() for an estimate.
+ *
+ * For several rooms, pass `lines` ([{ label, amount }], one per room,
+ * before discount and tax) instead of `roomPrice`, and the combined
+ * discount, tax and total.
  */
 const PriceBreakdown = ({
   roomPrice,
+  lines,
   nights,
   discount = 0,
   discountAmount = 0,
@@ -21,12 +26,23 @@ const PriceBreakdown = ({
 
   return (
     <dl className={`space-y-2.5 text-sm ${className}`}>
-      <div className="flex justify-between gap-4">
-        <dt className="text-ink-600">
-          {formatPrice(roomPrice)} × {pluralize(nightsCount, 'night')}
-        </dt>
-        <dd className="tabular-nums text-ink-900">{formatPrice(base)}</dd>
-      </div>
+      {lines ? (
+        lines.map((line, index) => (
+          <div key={index} className="flex justify-between gap-4">
+            <dt className="text-ink-600">{line.label}</dt>
+            <dd className="tabular-nums text-ink-900">
+              {formatPrice(line.amount)}
+            </dd>
+          </div>
+        ))
+      ) : (
+        <div className="flex justify-between gap-4">
+          <dt className="text-ink-600">
+            {formatPrice(roomPrice)} × {pluralize(nightsCount, 'night')}
+          </dt>
+          <dd className="tabular-nums text-ink-900">{formatPrice(base)}</dd>
+        </div>
+      )}
       {Number(discountAmount) > 0 && (
         <div className="flex justify-between gap-4">
           <dt className="text-green-800">

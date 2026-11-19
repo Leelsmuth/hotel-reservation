@@ -4,39 +4,31 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import differenceInCalendarDays from 'date-fns/differenceInCalendarDays';
 import addDays from 'date-fns/addDays';
 import { subscribeToDiscounts } from '@/lib/data/discounts';
-import {
-  calculateBookingPrice,
-  discountForNights,
-} from '@/lib/pricing/bookingPrice';
-// import { DISCOUNT } from '@/lib/static/roomLegend';
+import { DEFAULT_PARTY } from '@/lib/booking/occupancy';
 
 const BookingContext = createContext();
 
-export const BookingProvider = ({ children }) => {
-  const [bookingDetails, setBookingDetails] = useState({
-    checkInDate: new Date(),
-    checkOutDate: addDays(new Date(), 1),
+/** A new search: tonight, for the default party. */
+const newSearch = () => {
+  const checkInDate = new Date();
+  return {
+    checkInDate,
+    checkOutDate: addDays(checkInDate, 1),
     nightsCount: 1,
-    discount: 0,
-    discountAmount: 0,
-    roomTypeId: '',
-    roomId: '',
-    roomNo: null,
-    guestCount: 1,
-    guestCountActual: 1,
-    guestDetails: [],
-    roomPrice: 0,
-    tax: 0,
-    subtotal: 0,
-    totalPrice: 0,
-    paymentDetails: null,
-    isGuest: true,
-    bookingStatus: 'reserved',
-    userId: null,
-    checkedInBy: null,
-    checkedOutBy: null,
-    contactDetails: { fullName: '', email: '', phone: '' },
-  });
+    party: DEFAULT_PARTY,
+  };
+};
+
+/**
+ * The guest's search, shared by the search form, the results and the
+ * reservation form: stay dates and who's travelling. (Everything about a
+ * reservation itself, such as rooms, prices and contact details, comes from
+ * the server.) Also provides the current length-of-stay discounts, for
+ * explaining prices.
+ */
+export const BookingProvider = ({ children }) => {
+  // { checkInDate, checkOutDate, nightsCount, party: { adults, children, pets } }
+  const [bookingDetails, setBookingDetails] = useState(newSearch);
 
   const [discounts, setDiscounts] = useState({
     ELEVEN: 0,
@@ -60,134 +52,22 @@ export const BookingProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // Display only: the server prices the stay itself (lib/pricing/bookingPrice)
-  const updateRoomPrice = (roomPrice) => {
-    const { tax, subtotal, totalPrice, discountAmount } = calculateBookingPrice({
-      roomPrice,
-      nights: bookingDetails.nightsCount,
-      discount: bookingDetails.discount,
-    });
-
-    setBookingDetails((prev) => ({
-      ...prev,
-      roomPrice,
-      tax,
-      subtotal,
-      totalPrice,
-      discountAmount,
-    }));
-  };
-
   const updateDates = (checkInDate, checkOutDate) => {
-    const numOfNights = differenceInCalendarDays(checkOutDate, checkInDate);
-    const applicableDiscount = discountForNights(numOfNights, discounts);
-
     setBookingDetails((prev) => ({
       ...prev,
       checkInDate,
       checkOutDate,
-      discount: applicableDiscount,
-      nightsCount: numOfNights,
+      nightsCount: differenceInCalendarDays(checkOutDate, checkInDate),
     }));
   };
 
-  const updateRoomSelection = (roomTypeId, roomId, roomNo) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      roomTypeId,
-      roomId,
-      roomNo,
-    }));
+  /** Who's travelling: { adults, children, pets }. */
+  const updateParty = (party) => {
+    setBookingDetails((prev) => ({ ...prev, party }));
   };
 
-  const updateGuestCount = (guestCount, guestCountActual) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      guestCount,
-      guestCountActual,
-    }));
-  };
-
-  const updateGuestDetails = (guestDetails) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      guestDetails,
-    }));
-  };
-
-  const updatePaymentDetails = (paymentDetails) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      paymentDetails,
-    }));
-  };
-
-  const updateBookingStatus = (bookingStatus) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      bookingStatus,
-    }));
-  };
-
-  const updateIsGuest = (isGuest) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      isGuest,
-    }));
-  };
-
-  const updateContactDetails = (contactDetails) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      contactDetails,
-    }));
-  };
-
-  const updateUserId = (userId) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      userId,
-    }));
-  };
-
-  const updateBookingId = (bookingId) => {
-    setBookingDetails((prev) => ({
-      ...prev,
-      bookingId,
-    }));
-  };
-
-  const updateBooking = (newDetails) => {
-    setBookingDetails((prevDetails) => ({
-      ...prevDetails,
-      ...newDetails,
-    }));
-  };
-
-  const resetBookingDetails = () => {
-    setBookingDetails({
-      checkInDate: null,
-      checkOutDate: null,
-      nightsCount: 1,
-      discount: 0,
-      discountAmount: 0,
-      roomTypeId: '',
-      roomId: '',
-      guestCount: 1,
-      guestDetails: [],
-      roomPrice: 0,
-      tax: 0,
-      subtotal: 0,
-      totalPrice: 0,
-      paymentDetails: null,
-      isGuest: true,
-      bookingStatus: 'reserved',
-      userId: null,
-      checkedInBy: null,
-      checkedOutBy: null,
-      contactDetails: { fullName: '', email: '', phone: '' },
-    });
-  };
+  /** Back to a new search (after a booking is made). */
+  const resetSearch = () => setBookingDetails(newSearch());
 
   return (
     <BookingContext.Provider
@@ -198,18 +78,8 @@ export const BookingProvider = ({ children }) => {
         discounts,
         discountsLoaded,
         updateDates,
-        updateRoomSelection,
-        updateGuestCount,
-        updateGuestDetails,
-        updatePaymentDetails,
-        updateBookingStatus,
-        updateIsGuest,
-        updateContactDetails,
-        updateUserId,
-        updateBookingId,
-        updateRoomPrice,
-        updateBooking,
-        resetBookingDetails,
+        updateParty,
+        resetSearch,
       }}
     >
       {children}

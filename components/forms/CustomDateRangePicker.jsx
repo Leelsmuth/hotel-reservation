@@ -9,12 +9,12 @@ import addDays from 'date-fns/addDays';
 import differenceInCalendarDays from 'date-fns/differenceInCalendarDays';
 import { isValid, parseISO, startOfDay } from 'date-fns';
 import { useBooking } from '@/context/BookingContext';
-import OptionGenerator from './OptionGenerator ';
+import GuestPicker from './GuestPicker';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 import { pluralize } from '@/lib/helpers/formatters';
+import { DEFAULT_PARTY, clampParty } from '@/lib/booking/occupancy';
 
-const MAX_GUESTS_PER_ROOM = 4;
 // How long the finished selection stays visible before the calendar closes
 const CLOSE_DELAY_MS = 400;
 
@@ -40,7 +40,8 @@ const useMediaQuery = (query) => {
 };
 
 /**
- * Availability search: stay dates + number of guests.
+ * Availability search: stay dates + who's travelling (adults, children,
+ * pets). `fetchAvailableRooms(checkIn, checkOut, party)` runs the search.
  * Used on the home page hero and at the top of /make-reservation.
  *
  * The dates open a calendar popover (Escape or clicking outside closes it;
@@ -51,7 +52,7 @@ const CustomDateRangePicker = ({
   submitLabel = 'Check availability',
   layout = 'bar',
 }) => {
-  const { bookingDetails, updateGuestCount, updateDates } = useBooking();
+  const { bookingDetails, updateParty, updateDates } = useBooking();
   const today = new Date();
   const defaultEndDate = addDays(today, 1);
   const idBase = useId();
@@ -59,7 +60,6 @@ const CustomDateRangePicker = ({
   const datesValueId = `${idBase}-dates-value`;
   const nightsId = `${idBase}-nights`;
   const calendarId = `${idBase}-calendar`;
-  const guestsId = `${idBase}-guests`;
   const checkInId = `${idBase}-check-in`;
   const checkOutId = `${idBase}-check-out`;
 
@@ -71,7 +71,7 @@ const CustomDateRangePicker = ({
     },
   ]);
 
-  const [guestCount, setGuestCount] = useState(1);
+  const [party, setParty] = useState(DEFAULT_PARTY);
   const [showDatePicker, setShowDatePicker] = useState(false);
   // 0 = next click picks check-in, 1 = next click picks check-out
   const [selectionStep, setSelectionStep] = useState(0);
@@ -87,13 +87,16 @@ const CustomDateRangePicker = ({
     setShowDatePicker(false);
     updateDates(dateRange[0].startDate, dateRange[0].endDate);
     setTimeout(() => {
-      fetchAvailableRooms(dateRange[0].startDate, dateRange[0].endDate);
-      const newCount =
-        guestCount > MAX_GUESTS_PER_ROOM ? MAX_GUESTS_PER_ROOM : guestCount;
-      updateGuestCount(newCount, guestCount);
+      updateParty(party);
+      fetchAvailableRooms(dateRange[0].startDate, dateRange[0].endDate, party);
     }, 300);
   };
 
+  // Show the search in the booking state, and follow it when it changes
+  // (e.g. /make-reservation loading a search from the web address)
+  const checkInTime = bookingDetails.checkInDate?.getTime?.();
+  const checkOutTime = bookingDetails.checkOutDate?.getTime?.();
+  const { adults, children, pets } = clampParty(bookingDetails.party);
   useEffect(() => {
     if (bookingDetails.checkInDate || bookingDetails.checkOutDate) {
       setDateRange([
@@ -107,9 +110,9 @@ const CustomDateRangePicker = ({
       updateDates(dateRange[0].startDate, dateRange[0].endDate);
     }
 
-    setGuestCount(bookingDetails.guestCountActual);
+    setParty({ adults, children, pets });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkInTime, checkOutTime, adults, children, pets]);
 
   // react-date-range renders some controls without accessible names: label
   // them once the calendar is on screen
@@ -346,37 +349,7 @@ const CustomDateRangePicker = ({
         )}
       </div>
 
-      <div>
-        <label htmlFor={guestsId} className="form-label">
-          Guests
-        </label>
-        <div className="relative">
-          <Icon
-            name="users"
-            className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gold-700"
-          />
-          <select
-            id={guestsId}
-            className="form-select pl-11"
-            value={guestCount}
-            aria-describedby={
-              guestCount > MAX_GUESTS_PER_ROOM ? `${guestsId}-hint` : undefined
-            }
-            onChange={(e) => {
-              const value = parseInt(e.target.value, 10);
-              setGuestCount(value);
-            }}
-          >
-            <OptionGenerator numOptions={30} unit="guest" />
-          </select>
-        </div>
-        {guestCount > MAX_GUESTS_PER_ROOM && (
-          <p id={`${guestsId}-hint`} className="form-hint">
-            Rooms sleep up to {MAX_GUESTS_PER_ROOM}. You'll need more than one
-            room.
-          </p>
-        )}
-      </div>
+      <GuestPicker party={party} onChange={setParty} />
 
       <div className={isStacked ? '' : 'sm:pt-[1.625rem]'}>
         <Button type="submit" size="lg" icon="search" fullWidth>

@@ -1,3 +1,4 @@
+import { releaseExpiredHoldsQuietly } from '@/lib/booking/holds';
 import repository from '@/lib/data/repository';
 import { NextResponse } from 'next/server';
 
@@ -14,6 +15,7 @@ export async function GET(request) {
       );
     }
 
+    await releaseExpiredHoldsQuietly();
     const reservations = await repository.findReservationsByUser(
       userId,
       bookingStatus

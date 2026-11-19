@@ -1,4 +1,9 @@
 import { TAX_PERCENTAGE } from '@/lib/pricing/bookingPrice';
+import {
+  MAX_ADULTS_PER_ROOM,
+  MAX_GUESTS_PER_ROOM,
+  MAX_PETS_PER_ROOM,
+} from '@/lib/booking/occupancy';
 import Icon from '../ui/Icon';
 import DiscountTiers from './DiscountTiers';
 
@@ -25,7 +30,17 @@ const PricingExplainer = ({ className = '', title = 'How pricing works' }) => (
           className="mt-0.5 h-4 w-4 text-gold-700"
           strokeWidth={2}
         />
-        <span>Prices are per room, per night, for up to 4 guests.</span>
+        <span>
+          Prices are per room, per night, for up to {MAX_ADULTS_PER_ROOM} adults
+          ({MAX_GUESTS_PER_ROOM} guests with children).
+        </span>
+      </li>
+      <li className="flex gap-2.5">
+        <Icon name="paw" className="mt-0.5 h-4 w-4 text-gold-700" />
+        <span>
+          Pets stay free in pet-friendly rooms, up to {MAX_PETS_PER_ROOM} per
+          room.
+        </span>
       </li>
       <li className="flex gap-2.5">
         <Icon

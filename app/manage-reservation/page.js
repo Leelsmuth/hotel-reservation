@@ -5,6 +5,7 @@ import RoomDetailsModal from '@/components/toast/RoomDetailsModal';
 import Container from '@/components/layout/Container';
 import PageHeader from '@/components/ui/PageHeader';
 import StaySummary from '@/components/booking/StaySummary';
+import { staySummaryProps } from '@/components/booking/staySummaryProps';
 import BookingPolicies from '@/components/booking/BookingPolicies';
 import { TextField } from '@/components/forms/Field';
 import Alert from '@/components/ui/Alert';
@@ -14,14 +15,12 @@ import EmptyState from '@/components/ui/EmptyState';
 import Icon from '@/components/ui/Icon';
 import LoadingState from '@/components/ui/LoadingState';
 import { useAuth } from '@/context/AuthProvider';
-import { useBooking } from '@/context/BookingContext';
 import { useToast } from '@/context/ToastContext';
 import {
+  CANCELLATION_REASON,
   RESERVATION_STATUS,
-  ROOM_MAIN_PICTURES,
-  ROOM_TYPES_NAMES,
 } from '@/lib/static/roomLegend';
-import { getRoomByType } from '@/lib/static/roomCatalog';
+import { sumBookingPrices } from '@/lib/pricing/bookingPrice';
 import { handleError } from '@/lib/toast/handleError';
 import { handleSuccess } from '@/lib/toast/handleSuccess';
 import Link from 'next/link';
@@ -30,17 +29,17 @@ import { useRef, useState } from 'react';
 
 const ManageReservation = () => {
   const router = useRouter();
-  const { updateIsGuest, updateUserId } = useBooking();
   const { user } = useAuth();
   const { showToast } = useToast();
 
   const [isFetching, setIsFetching] = useState(null);
   const [reservationDetails, setReservationDetails] = useState(null);
+  // The rooms of the booking shown (one, or several booked together)
+  const [bookingRooms, setBookingRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(true);
-  const [showMorePerks, setShowMorePerks] = useState(false);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
 
   const bookingId = useRef(null);
@@ -85,10 +84,13 @@ const ManageReservation = () => {
       }
 
       const data = await response.json();
-      if (
-        data.reservation.bookingStatus === RESERVATION_STATUS.CHECKEDIN ||
-        data.reservation.bookingStatus === RESERVATION_STATUS.CHECKEDOUT
-      ) {
+      // Rooms already checked in or out are dealt with at the front desk
+      const rooms = (data.reservations ?? [data.reservation]).filter(
+        (room) =>
+          room.bookingStatus !== RESERVATION_STATUS.CHECKEDIN &&
+          room.bookingStatus !== RESERVATION_STATUS.CHECKEDOUT
+      );
+      if (rooms.length === 0) {
         setReservationDetails(null);
         setIsFetching(false);
         setError(
@@ -97,7 +99,21 @@ const ManageReservation = () => {
         return;
       }
 
-      setReservationDetails(data.reservation);
+      // Show the rooms still reserved or booked; if every room was
+      // cancelled, show them as cancelled
+      const activeRooms = rooms.filter(
+        (room) =>
+          room.bookingStatus === RESERVATION_STATUS.RESERVED ||
+          room.bookingStatus === RESERVATION_STATUS.BOOKED
+      );
+      const shownRooms = activeRooms.length > 0 ? activeRooms : rooms;
+      setBookingRooms(shownRooms);
+      // Unpaid rooms first: paying starts from one of them
+      setReservationDetails(
+        shownRooms.find(
+          (room) => room.bookingStatus === RESERVATION_STATUS.RESERVED
+        ) ?? shownRooms[0]
+      );
       setIsFetching(false);
 
       bookingId.current.value = '';
@@ -110,10 +126,6 @@ const ManageReservation = () => {
   };
 
   const bookingHandler = () => {
-    if (user) {
-      updateIsGuest(false);
-      updateUserId(user.uid);
-    }
     router.push(
       `/booking?resId=${reservationDetails.id}&bId=${reservationDetails.bookingId}`
     );
@@ -139,11 +151,10 @@ const ManageReservation = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        // Cancels every room of the booking
         body: JSON.stringify({
           reservationId: reservationDetails.id,
-          roomId: reservationDetails.roomId,
-          bookedFrom: reservationDetails.bookingDates.bookedFrom,
-          bookedUntil: reservationDetails.bookingDates.bookedUntil,
+          scope: 'booking',
         }),
       });
 
@@ -157,6 +168,11 @@ const ManageReservation = () => {
       }
 
       const data = await response.json();
+      const emailDetails = {
+        ...reservationDetails,
+        ...bookingTotals,
+        rooms: bookingRooms,
+      };
 
       if (isBooking) {
         await fetch('/api/send-confirmation-email/booking/cancel', {
@@ -166,7 +182,7 @@ const ManageReservation = () => {
           },
           body: JSON.stringify({
             recipient: reservationDetails.contactDetails.email,
-            bookingDetails: reservationDetails,
+            bookingDetails: emailDetails,
           }),
         });
       } else {
@@ -177,7 +193,7 @@ const ManageReservation = () => {
           },
           body: JSON.stringify({
             recipient: reservationDetails.contactDetails.email,
-            bookingDetails: reservationDetails,
+            bookingDetails: emailDetails,
           }),
         });
       }
@@ -191,7 +207,21 @@ const ManageReservation = () => {
     }
   };
 
-  const status = reservationDetails?.bookingStatus;
+  // Any unpaid room makes the booking unpaid (rooms are paid for together)
+  const status = bookingRooms.some(
+    (room) => room.bookingStatus === RESERVATION_STATUS.RESERVED
+  )
+    ? RESERVATION_STATUS.RESERVED
+    : reservationDetails?.bookingStatus;
+  const isMultiRoom = bookingRooms.length > 1;
+  // Cancelled because it wasn't paid within the hold
+  const isExpired =
+    status === RESERVATION_STATUS.CANCELLED &&
+    bookingRooms.some(
+      (room) => room.cancellationReason === CANCELLATION_REASON.EXPIRED
+    );
+  const bookingTotals =
+    bookingRooms.length > 0 ? sumBookingPrices(bookingRooms) : null;
   const statusBadge =
     status === RESERVATION_STATUS.RESERVED ? (
       <Badge tone="warning">Awaiting payment</Badge>
@@ -201,7 +231,9 @@ const ManageReservation = () => {
         Paid &amp; confirmed
       </Badge>
     ) : status === RESERVATION_STATUS.CANCELLED ? (
-      <Badge tone="neutral">Cancelled</Badge>
+      <Badge tone="neutral">
+        {isExpired ? 'Cancelled · expired' : 'Cancelled'}
+      </Badge>
     ) : null;
 
   return (
@@ -290,39 +322,41 @@ const ManageReservation = () => {
                     booking.
                   </Alert>
                 )}
-                {status === RESERVATION_STATUS.CANCELLED && (
-                  <Alert tone="neutral" title="This reservation was cancelled">
-                    The room has been released. You're welcome to make a new
-                    reservation.
-                  </Alert>
-                )}
+                {status === RESERVATION_STATUS.CANCELLED &&
+                  (isExpired ? (
+                    <Alert
+                      tone="neutral"
+                      title="This reservation expired"
+                      action={
+                        <Button size="sm" href="/make-reservation">
+                          Book again
+                        </Button>
+                      }
+                    >
+                      It wasn't paid within 1 hour, so it was cancelled and{' '}
+                      {isMultiRoom ? 'the rooms were' : 'the room was'}{' '}
+                      released. You haven't been charged.
+                    </Alert>
+                  ) : (
+                    <Alert
+                      tone="neutral"
+                      title="This reservation was cancelled"
+                    >
+                      {isMultiRoom ? 'The rooms have' : 'The room has'} been
+                      released. You're welcome to make a new reservation.
+                    </Alert>
+                  ))}
 
                 <StaySummary
                   heading="Your stay"
-                  room={
-                    getRoomByType(reservationDetails.roomTypeId) ?? {
-                      name: ROOM_TYPES_NAMES[reservationDetails.roomTypeId],
-                      image: ROOM_MAIN_PICTURES[reservationDetails.roomTypeId],
-                    }
-                  }
-                  badge={statusBadge}
-                  checkIn={reservationDetails.bookingDates.bookedFrom}
-                  checkOut={reservationDetails.bookingDates.bookedUntil}
-                  nights={reservationDetails.nightsCount}
-                  guests={reservationDetails.guestCount}
-                  bookingId={reservationDetails.bookingId}
-                  price={{
-                    roomPrice: reservationDetails.roomPrice,
-                    nights: reservationDetails.nightsCount,
-                    discount: reservationDetails.discount,
-                    discountAmount: reservationDetails.discountAmount,
-                    tax: reservationDetails.tax,
-                    total: reservationDetails.totalPrice,
+                  {...staySummaryProps(bookingRooms, {
                     totalLabel:
                       status === RESERVATION_STATUS.BOOKED
                         ? 'Total paid (CAD)'
                         : 'Total (CAD)',
-                  }}
+                  })}
+                  badge={statusBadge}
+                  bookingId={reservationDetails.bookingId}
                 />
 
                 {status === RESERVATION_STATUS.RESERVED && (
@@ -376,6 +410,8 @@ const ManageReservation = () => {
                       <p className="text-sm text-ink-600">
                         Changed your plans? Cancelling an unpaid reservation is
                         free.
+                        {isMultiRoom &&
+                          ` All ${bookingRooms.length} rooms are cancelled together.`}
                       </p>
                       <Button
                         variant="danger-outline"
@@ -403,6 +439,8 @@ const ManageReservation = () => {
                       <p className="mt-1 text-sm text-ink-600">
                         A 30% cancellation fee applies; 70% of what you paid is
                         refunded.
+                        {isMultiRoom &&
+                          ` All ${bookingRooms.length} rooms are cancelled together.`}
                       </p>
                     </div>
                     <Button
@@ -445,7 +483,8 @@ const ManageReservation = () => {
                   onClose={closeModal}
                   onConfirm={cancelReservation}
                   isBooking={isBooking}
-                  price={reservationDetails.totalPrice}
+                  price={bookingTotals?.totalPrice}
+                  roomCount={bookingRooms.length}
                 />
               </div>
             ) : (

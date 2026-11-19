@@ -6,24 +6,20 @@ import SuccessPanel from '@/components/booking/SuccessPanel';
 import Alert from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthProvider';
-import { useBooking } from '@/context/BookingContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const ReservationConfirmation = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { updateIsGuest, updateUserId } = useBooking();
   const { user, initializing } = useAuth();
 
   const [reservationId, setReservationId] = useState('');
   const [bookingId, setBookingId] = useState('');
+  const roomCount = Number(searchParams.get('rooms')) || 1;
+  const isMultiRoom = roomCount > 1;
 
   const bookingHandler = () => {
-    if (user) {
-      updateIsGuest(false);
-      updateUserId(user.uid);
-    }
     router.replace(`/booking?resId=${reservationId}&bId=${bookingId}`);
   };
 
@@ -54,7 +50,11 @@ const ReservationConfirmation = () => {
       <Container classes="pt-8 sm:pt-10">
         <BookingSteps current={3} className="mb-10" />
         <SuccessPanel
-          title="Your room is reserved"
+          title={
+            isMultiRoom
+              ? `Your ${roomCount} rooms are reserved`
+              : 'Your room is reserved'
+          }
           intro="We've emailed your reservation details. Keep your booking ID handy to manage your stay."
           bookingId={bookingId}
         >
@@ -62,8 +62,9 @@ const ReservationConfirmation = () => {
             tone="warning"
             title="Pay within 1 hour to confirm your booking"
           >
-            We're holding your room for 1 hour. If it isn't paid by then, the
-            reservation is released and the room becomes available to others.
+            {isMultiRoom
+              ? `We're holding your ${roomCount} rooms for 1 hour. You'll pay for all of them in one payment. If they aren't paid by then, the reservation is released and the rooms become available to others.`
+              : "We're holding your room for 1 hour. If it isn't paid by then, the reservation is released and the room becomes available to others."}
           </Alert>
 
           <div className="mt-8">

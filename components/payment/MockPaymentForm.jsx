@@ -22,9 +22,14 @@ const MockPaymentForm = ({ clientSecret, onPaymentSuccess, amount }) => {
   const [cvc, setCvc] = useState('123');
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+  // "Pay, then close the tab": paid, but the page never reports it, so only
+  // the (mock) Stripe webhook can complete the booking
+  const [closedTab, setClosedTab] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const simulateClosedTab =
+      event.nativeEvent?.submitter?.dataset?.closeTab === 'true';
     setErrorMessage(null);
 
     if (!expiry.trim() || !cvc.trim()) {
@@ -43,6 +48,8 @@ const MockPaymentForm = ({ clientSecret, onPaymentSuccess, amount }) => {
 
       if (error || !response.ok) {
         setErrorMessage(error?.message || 'Payment failed. Please try again.');
+      } else if (simulateClosedTab) {
+        setClosedTab(true);
       } else {
         // Same PaymentIntent object stripe.confirmPayment() resolves with
         onPaymentSuccess(paymentIntent);
@@ -53,6 +60,16 @@ const MockPaymentForm = ({ clientSecret, onPaymentSuccess, amount }) => {
       setLoading(false);
     }
   };
+
+  if (closedTab) {
+    return (
+      <Alert tone="info" title="Mock: payment sent, tab “closed”">
+        The payment went through, but this page won't report it. The mock Stripe
+        webhook completes the booking in a moment: look it up on Manage booking,
+        and check the terminal for the confirmation email.
+      </Alert>
+    );
+  }
 
   const label =
     Number.isFinite(Number(amount)) && amount !== undefined && amount !== null
@@ -123,6 +140,21 @@ const MockPaymentForm = ({ clientSecret, onPaymentSuccess, amount }) => {
       >
         {label}
       </Button>
+      <div className="border-t border-dashed border-amber-300 pt-4 text-sm text-amber-900">
+        <Button
+          type="submit"
+          variant="secondary"
+          size="sm"
+          data-close-tab="true"
+          disabled={loading}
+        >
+          Mock: pay, then close the tab
+        </Button>
+        <p className="mt-1">
+          Pays, but this page doesn't report it, as if the guest closed the tab.
+          The mock Stripe webhook completes the booking a moment later.
+        </p>
+      </div>
     </form>
   );
 };

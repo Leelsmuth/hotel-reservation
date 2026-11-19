@@ -7,13 +7,28 @@ import {
   formatStayDate,
   pluralize,
 } from '@/lib/helpers/formatters';
+import { describeParty, occupancyOf } from '@/lib/booking/occupancy';
 import ConfirmationModal from '../toast/ConfirmationModal ';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 
-const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
+/**
+ * One room on the account pages. A room from a booking with several rooms
+ * says which room it is; `roomsToPay` is how many rooms of its booking are
+ * awaiting payment (they're paid for together).
+ */
+const ProfileReservationCard = ({
+  res,
+  bookingHandler,
+  cancelReservation,
+  roomsToPay = 1,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const bookingRoomIds = Array.isArray(res.groupReservationIds)
+    ? res.groupReservationIds
+    : [];
+  const isMultiRoom = bookingRoomIds.length > 1;
   const isBooking = res.bookingStatus === RESERVATION_STATUS.BOOKED;
   const isReserved = res.bookingStatus === RESERVATION_STATUS.RESERVED;
   const room = getRoomByType(res.roomTypeId);
@@ -67,6 +82,12 @@ const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
             <span className="sr-only">Booking ID </span>
             {res.bookingId}
           </p>
+          {isMultiRoom && (
+            <p className="mt-1 text-sm text-ink-600">
+              Room {bookingRoomIds.indexOf(res.id) + 1} of{' '}
+              {bookingRoomIds.length} in this booking
+            </p>
+          )}
 
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -85,7 +106,7 @@ const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
               <dt className="text-ink-600">Stay</dt>
               <dd className="font-semibold text-ink-900">
                 {pluralize(Number(res.nightsCount) || 0, 'night')} ·{' '}
-                {pluralize(Number(res.guestCount) || 1, 'guest')}
+                {describeParty(occupancyOf(res))}
               </dd>
             </div>
             <div>
@@ -105,7 +126,7 @@ const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
                 iconRight="arrow-right"
                 className="flex-1"
               >
-                Pay now
+                {roomsToPay > 1 ? `Pay for ${roomsToPay} rooms` : 'Pay now'}
               </Button>
             )}
             <Button
@@ -113,7 +134,9 @@ const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
               onClick={openModal}
               className={isReserved ? '' : 'flex-1'}
             >
-              Cancel{isReserved ? '' : ' booking'}
+              {isMultiRoom
+                ? 'Cancel room'
+                : `Cancel${isReserved ? '' : ' booking'}`}
               <span className="sr-only">
                 {' '}
                 {roomName} {res.bookingId}
@@ -131,6 +154,7 @@ const ProfileReservationCard = ({ res, bookingHandler, cancelReservation }) => {
         }}
         isBooking={isBooking}
         price={res?.totalPrice}
+        roomOnly={isMultiRoom}
       />
     </Fragment>
   );

@@ -6,6 +6,7 @@ import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 import DiscountTiers from '../booking/DiscountTiers';
 import {
+  capacityText,
   getRoomByKey,
   HOTEL_FACILITIES,
   ROOM_AMENITIES,
@@ -38,7 +39,7 @@ const RoomDetails = ({ name }) => {
           <span className="flex flex-wrap items-center gap-x-5 gap-y-1 text-base">
             <span className="flex items-center gap-1.5">
               <Icon name="users" className="h-5 w-5 text-gold-700" />
-              Up to {room.maxGuests} guests
+              {capacityText(room)}
             </span>
             <span className="flex items-center gap-1.5">
               <Icon name="bed" className="h-5 w-5 text-gold-700" />1 bedroom
@@ -102,8 +103,8 @@ const RoomDetails = ({ name }) => {
                 <span className="text-ink-600"> / night</span>
               </p>
               <p className="mt-1 text-sm text-ink-600">
-                Per room, for up to {room.maxGuests} guests. {TAX_PERCENTAGE}%
-                tax added.
+                Per room, for up to {room.maxAdults} adults ({room.maxGuests}{' '}
+                guests with children). {TAX_PERCENTAGE}% tax added.
               </p>
 
               <Button

@@ -31,6 +31,7 @@ const BookingConfirmation = () => {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [reservationCode, setReservationCode] = useState('');
+  const roomCount = Number(searchParams.get('rooms')) || 1;
 
   useEffect(() => {
     const bId = searchParams.get('bId');
@@ -46,7 +47,9 @@ const BookingConfirmation = () => {
         <BookingSteps current={5} className="mb-10" />
         <SuccessPanel
           title="Your booking is confirmed"
-          intro="Thank you! Your payment was successful and your room is booked. We look forward to welcoming you."
+          intro={`Thank you! Your payment was successful and your ${
+            roomCount > 1 ? `${roomCount} rooms are` : 'room is'
+          } booked. We look forward to welcoming you.`}
           bookingId={reservationCode}
         >
           <h2 className="font-display text-xl font-semibold text-ink-900">

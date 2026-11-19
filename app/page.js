@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import CustomDateRangePicker from '@/components/forms/CustomDateRangePicker';
+import { searchToQuery } from '@/lib/booking/searchQuery';
 import Container from '@/components/layout/Container';
 import MainLayout from '@/components/layout/MainLayout';
 import RoomGrid from '@/components/cards/RoomGrid';
@@ -38,8 +39,11 @@ const STEPS = [
 const Home = () => {
   const router = useRouter();
 
-  const fetchAvailableRooms = () => {
-    router.push('/make-reservation');
+  // The results page runs the search from the web address
+  const fetchAvailableRooms = (checkIn, checkOut, party) => {
+    router.push(
+      `/make-reservation?${searchToQuery({ checkIn, checkOut, party })}`
+    );
   };
 
   return (
@@ -155,7 +159,7 @@ const Home = () => {
             id="rooms-title"
             eyebrow="Stay with us"
             title="Our rooms"
-            description="Every room sleeps up to 4 guests and includes Wi‑Fi, a private bathroom and a dining area."
+            description="Every room sleeps up to 4 adults (6 guests with children) and includes Wi‑Fi, a private bathroom and a dining area. Pet-friendly rooms available."
             link={{ href: '/rooms', label: 'Compare all rooms' }}
           />
           <RoomGrid />
