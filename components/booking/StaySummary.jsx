@@ -3,16 +3,25 @@ import Icon from '../ui/Icon';
 import PriceBreakdown from './PriceBreakdown';
 import { formatStayDate, pluralize } from '@/lib/helpers/formatters';
 
+const isMultiRoom = (rooms) => Array.isArray(rooms) && rooms.length > 1;
+
 /**
  * Card summarising a stay: room photo and name, dates, guests and the price
  * breakdown. Used on the reservation form, checkout and "manage booking".
+ *
+ * For a booking with several rooms, also pass `rooms`
+ * ([{ name, guests, guestsLabel?, note? }], one per room); `room` then only
+ * sets the photo and `guests` is the total. `guestsLabel` (e.g. "2 adults,
+ * 1 pet") replaces the plain guest count.
  */
 const StaySummary = ({
   room,
+  rooms,
   checkIn,
   checkOut,
   nights,
   guests,
+  guestsLabel,
   bookingId,
   price,
   heading = 'Your stay',
@@ -37,11 +46,33 @@ const StaySummary = ({
         <div>
           <p className="eyebrow">{heading}</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-ink-900">
-            {room?.name ?? 'Room'}
+            {isMultiRoom(rooms)
+              ? `${rooms.length} rooms`
+              : (room?.name ?? 'Room')}
           </h2>
         </div>
         {badge}
       </div>
+
+      {isMultiRoom(rooms) && (
+        <ol className="mt-3 space-y-1.5 text-sm" aria-label="Rooms">
+          {rooms.map((item, index) => (
+            <li key={index} className="flex flex-wrap justify-between gap-x-3">
+              <span className="text-ink-900">
+                <span className="text-ink-600">Room {index + 1}:</span>{' '}
+                <span className="font-medium">{item.name}</span>
+                {item.note && (
+                  <span className="text-ink-600"> · {item.note}</span>
+                )}
+              </span>
+              <span className="text-ink-600">
+                {item.guestsLabel ??
+                  pluralize(Number(item.guests) || 1, 'guest')}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
 
       <dl className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-sand-50 p-4 text-sm">
         <div>
@@ -65,7 +96,8 @@ const StaySummary = ({
         <div>
           <dt className="text-ink-600">Guests</dt>
           <dd className="mt-0.5 font-semibold text-ink-900">
-            1 room · {pluralize(Number(guests) || 1, 'guest')}
+            {isMultiRoom(rooms) ? `${rooms.length} rooms` : '1 room'} ·{' '}
+            {guestsLabel ?? pluralize(Number(guests) || 1, 'guest')}
           </dd>
         </div>
         {bookingId && (

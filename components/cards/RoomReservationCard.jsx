@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import Icon from '../ui/Icon';
-import { CARD_AMENITIES } from '@/lib/static/roomCatalog';
+import { CARD_AMENITIES, capacityText } from '@/lib/static/roomCatalog';
 import { formatPrice, pluralize } from '@/lib/helpers/formatters';
 
 /**
@@ -12,6 +12,12 @@ import { formatPrice, pluralize } from '@/lib/helpers/formatters';
  * not just the nightly rate.
  *
  * `estimate` is calculateBookingPrice() output for the searched stay.
+ * `actionLabel` names the button (e.g. "Add to booking" once the guest has
+ * picked rooms); `actionUnavailable` replaces the button with an explanation
+ * (e.g. every free room of this type is already in the booking).
+ * `petFriendlyFree` (searches with pets only) is how many pet-friendly rooms
+ * of this type are free. `notForPets` greys the card out when it can't take
+ * the guest's pets.
  */
 const RoomReservationCard = ({
   room,
@@ -20,14 +26,19 @@ const RoomReservationCard = ({
   reservationHandler,
   showModal,
   priority = false,
+  actionLabel = 'Reserve',
+  actionUnavailable,
+  petFriendlyFree,
+  notForPets = false,
 }) => {
   const titleId = `room-result-${room.typeId}`;
+  const greyed = !available || notForPets;
 
   return (
     <article
       aria-labelledby={titleId}
       className={`grid grid-cols-1 overflow-hidden rounded-2xl border bg-white shadow-card md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] ${
-        available ? 'border-ink-100' : 'border-ink-200 bg-ink-50/60'
+        greyed ? 'border-ink-200 bg-ink-50/60' : 'border-ink-100'
       }`}
     >
       <div className="relative aspect-[3/2] bg-ink-100 md:aspect-auto md:min-h-full">
@@ -37,10 +48,12 @@ const RoomReservationCard = ({
           fill
           priority={priority}
           sizes="(min-width: 1280px) 340px, (min-width: 768px) 35vw, 100vw"
-          className={`object-cover ${available ? '' : 'grayscale-[60%] opacity-80'}`}
+          className={`object-cover ${greyed ? 'grayscale-[60%] opacity-80' : ''}`}
         />
         <div className="absolute left-3 top-3">
-          {available ? (
+          {available && notForPets ? (
+            <Badge tone="dark">Not for pets on these dates</Badge>
+          ) : available ? (
             <Badge tone="success" className="shadow-sm">
               <Icon name="check" className="h-3.5 w-3.5" strokeWidth={2.5} />
               Available
@@ -61,8 +74,27 @@ const RoomReservationCard = ({
           </h3>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-600">
             <Icon name="users" className="h-4 w-4" />
-            Up to {room.maxGuests} guests
+            {capacityText(room)}
           </p>
+          {available && petFriendlyFree !== undefined && (
+            <p
+              className={`mt-1 flex items-center gap-1.5 text-sm ${
+                petFriendlyFree > 0
+                  ? 'font-medium text-ink-900'
+                  : 'text-ink-600'
+              }`}
+            >
+              <Icon
+                name="paw"
+                className={`h-4 w-4 ${
+                  petFriendlyFree > 0 ? 'text-gold-700' : 'text-ink-500'
+                }`}
+              />
+              {petFriendlyFree > 0
+                ? `${pluralize(petFriendlyFree, 'pet-friendly room')} free`
+                : 'No pet-friendly rooms for these dates'}
+            </p>
+          )}
           <ul
             className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-ink-700"
             aria-label="Highlights"
@@ -118,14 +150,18 @@ const RoomReservationCard = ({
                   </>
                 )}
               </div>
-              <Button
-                onClick={() => reservationHandler(room.typeId)}
-                fullWidth
-                iconRight="arrow-right"
-                aria-describedby={titleId}
-              >
-                Reserve
-              </Button>
+              {actionUnavailable ? (
+                <p className="text-sm text-ink-700">{actionUnavailable}</p>
+              ) : (
+                <Button
+                  onClick={() => reservationHandler(room.typeId)}
+                  fullWidth
+                  iconRight="arrow-right"
+                  aria-describedby={titleId}
+                >
+                  {actionLabel}
+                </Button>
+              )}
             </>
           ) : (
             <div className="text-sm text-ink-700">

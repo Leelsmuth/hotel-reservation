@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import Icon from '../ui/Icon';
-import { CARD_AMENITIES } from '@/lib/static/roomCatalog';
+import { CARD_AMENITIES, capacityText } from '@/lib/static/roomCatalog';
 import { formatPrice } from '@/lib/helpers/formatters';
 
 /**
@@ -41,7 +41,7 @@ const RoomCard = ({
           </Heading>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-600">
             <Icon name="users" className="h-4 w-4" />
-            Up to {room.maxGuests} guests
+            {capacityText(room)}
           </p>
           {showAmenities && (
             <ul

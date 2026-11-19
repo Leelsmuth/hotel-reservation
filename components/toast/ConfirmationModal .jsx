@@ -9,6 +9,9 @@ import { formatPrice } from '@/lib/helpers/formatters';
  * Confirms cancelling a reservation (free) or a paid booking (30% fee).
  * The safe choice ("Keep …") is the secondary button; the destructive one is
  * red and says exactly what it does.
+ *
+ * `roomCount` is the number of rooms being cancelled together (a multi-room
+ * booking). `roomOnly` cancels just one room of a multi-room booking.
  */
 const ConfirmationModal = ({
   isOpen,
@@ -16,8 +19,15 @@ const ConfirmationModal = ({
   onConfirm,
   price,
   isBooking = true,
+  roomCount = 1,
+  roomOnly = false,
 }) => {
-  const noun = isBooking ? 'booking' : 'reservation';
+  const noun = roomOnly ? 'room' : isBooking ? 'booking' : 'reservation';
+  const scopeNote = roomOnly
+    ? `The other rooms in this booking stay ${isBooking ? 'booked' : 'reserved'}.`
+    : roomCount > 1
+      ? `All ${roomCount} rooms in this ${noun} will be cancelled.`
+      : null;
   const hasPrice =
     Number.isFinite(Number(price)) && price !== undefined && price !== null;
 
@@ -42,7 +52,7 @@ const ConfirmationModal = ({
         <div className="space-y-4">
           <p>
             Cancelling a paid booking incurs a{' '}
-            <strong>30% cancellation fee</strong>.
+            <strong>30% cancellation fee</strong>.{scopeNote && ` ${scopeNote}`}
           </p>
           {hasPrice && (
             <dl className="space-y-2 rounded-xl bg-ink-50 p-4 text-sm">
@@ -65,9 +75,14 @@ const ConfirmationModal = ({
       ) : (
         <div className="space-y-4">
           <p>
-            Your room will be released and you won't be charged. This can't be
-            undone.
+            {roomOnly
+              ? 'This room will be released'
+              : roomCount > 1
+                ? 'Your rooms will be released'
+                : 'Your room will be released'}{' '}
+            and you won't be charged. This can't be undone.
           </p>
+          {scopeNote && <p>{scopeNote}</p>}
         </div>
       )}
     </Modal>

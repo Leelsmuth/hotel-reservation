@@ -9,8 +9,12 @@ import BookingPolicies from '@/components/booking/BookingPolicies';
 import { TAX_PERCENTAGE } from '@/lib/pricing/bookingPrice';
 
 const FACTS = [
-  { icon: 'users', text: 'Every room sleeps up to 4 guests' },
+  {
+    icon: 'users',
+    text: 'Every room sleeps up to 4 adults, 6 guests with children',
+  },
   { icon: 'wifi', text: 'Wi‑Fi, TV and private bathroom included' },
+  { icon: 'paw', text: 'Pet-friendly rooms, no pet fee' },
   {
     icon: 'tag',
     text: `Nightly rate + ${TAX_PERCENTAGE}% tax, nothing hidden`,

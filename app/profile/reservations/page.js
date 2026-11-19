@@ -115,6 +115,12 @@ const ProfileReservations = () => {
                 res={reservation}
                 bookingHandler={bookingHandler}
                 cancelReservation={cancelReservation}
+                // Rooms booked together are paid for together
+                roomsToPay={
+                  reservations.filter(
+                    (other) => other.bookingId === reservation.bookingId
+                  ).length
+                }
               />
             </li>
           ))}

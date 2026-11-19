@@ -5,15 +5,19 @@ import Container from '@/components/layout/Container';
 import StripeCheckout from '@/components/payment/StripeCheckout';
 import BookingSteps from '@/components/booking/BookingSteps';
 import StaySummary from '@/components/booking/StaySummary';
+import { staySummaryProps } from '@/components/booking/staySummaryProps';
 import Alert from '@/components/ui/Alert';
 import Button from '@/components/ui/Button';
 import Icon from '@/components/ui/Icon';
 import LoadingState from '@/components/ui/LoadingState';
-import { getRoomByType } from '@/lib/static/roomCatalog';
 import { useAuth } from '@/context/AuthProvider';
 import { useBooking } from '@/context/BookingContext';
 import { useToast } from '@/context/ToastContext';
-import { RESERVATION_STATUS, ROOM_TYPES_NAMES } from '@/lib/static/roomLegend';
+import {
+  CANCELLATION_REASON,
+  RESERVATION_STATUS,
+} from '@/lib/static/roomLegend';
+import { sumBookingPrices } from '@/lib/pricing/bookingPrice';
 import { handleError } from '@/lib/toast/handleError';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -24,6 +28,8 @@ const Booking = () => {
   const [reservationId, setReservationId] = useState('');
   const [bookingId, setBookingId] = useState('');
   const [bookingDetails, setBookingDetails] = useState(null);
+  // The rooms of the booking still awaiting payment (all paid at once)
+  const [roomsToPay, setRoomsToPay] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,9 +37,12 @@ const Booking = () => {
   // show the payment form again for it (that would charge the guest twice);
   // completing the booking again with the same payment is safe.
   const [unconfirmedPayment, setUnconfirmedPayment] = useState(null);
+  // The reservation expired (not paid within 1 hour)
+  const [isExpired, setIsExpired] = useState(false);
+  // The payment couldn't book the rooms and was refunded: { message }
+  const [refund, setRefund] = useState(null);
 
-  const { updateBooking, updateIsGuest, updateUserId, resetBookingDetails } =
-    useBooking();
+  const { resetSearch } = useBooking();
   const { user } = useAuth();
   const { showToast } = useToast();
 
@@ -54,14 +63,28 @@ const Booking = () => {
         return;
       }
 
-      const data = await response.json();
-      if (data.bookingStatus !== RESERVATION_STATUS.RESERVED) {
+      const { groupReservations, ...data } = await response.json();
+      const rooms = groupReservations ?? [data];
+      const unpaid = rooms.filter(
+        (room) => room.bookingStatus === RESERVATION_STATUS.RESERVED
+      );
+      const expired =
+        unpaid.length === 0 &&
+        rooms.every(
+          (room) => room.cancellationReason === CANCELLATION_REASON.EXPIRED
+        );
+      if (expired) {
+        setBookingDetails(data);
+        setIsExpired(true);
+        return;
+      }
+      if (unpaid.length === 0) {
         setLoading(false);
         router.replace('/');
         return;
       }
       setBookingDetails(data);
-      updateBooking(data);
+      setRoomsToPay(unpaid);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -86,7 +109,12 @@ const Booking = () => {
       });
 
       if (!response.ok) {
-        const { error: reason } = await response.json().catch(() => ({}));
+        const { error: reason, code } = await response.json().catch(() => ({}));
+        if (code === 'refunded') {
+          setRefund({ message: reason });
+          setIsSubmitting(false);
+          return;
+        }
         handleError(
           showToast,
           reason
@@ -98,21 +126,15 @@ const Booking = () => {
         return;
       }
 
+      // The server emails the confirmation
       const data = await response.json();
 
-      await fetch('/api/send-confirmation-email/booking', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipient: bookingDetails.contactDetails.email,
-          bookingDetails,
-        }),
-      });
-
-      router.replace(`/booking/confirmation?bId=${data.bookingId}`);
-      resetBookingDetails();
+      router.replace(
+        `/booking/confirmation?bId=${data.bookingId}${
+          roomsToPay.length > 1 ? `&rooms=${roomsToPay.length}` : ''
+        }`
+      );
+      resetSearch();
     } catch (error) {
       console.error('Error:', error);
       handleError(showToast, 'Oops! Something went wrong.');
@@ -120,14 +142,6 @@ const Booking = () => {
       setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (user) {
-      updateIsGuest(false);
-      updateUserId(user.uid);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   // TODO: re-route all transations that have a booking status other then 'reserved'
 
@@ -144,7 +158,9 @@ const Booking = () => {
     }
   }, [searchParams]);
 
-  const room = bookingDetails ? getRoomByType(bookingDetails.roomTypeId) : null;
+  const isMultiRoom = roomsToPay.length > 1;
+  const amountToPay =
+    roomsToPay.length > 0 ? sumBookingPrices(roomsToPay).totalPrice : undefined;
   const missingReservation = !searchParams.get('resId');
 
   return (
@@ -196,35 +212,53 @@ const Booking = () => {
           >
             {error}
           </Alert>
+        ) : isExpired ? (
+          <Alert
+            tone="warning"
+            className="mt-6"
+            title="This reservation has expired"
+            action={
+              <Button size="sm" href="/make-reservation">
+                Book again
+              </Button>
+            }
+          >
+            It wasn't paid within 1 hour, so we released the rooms. You haven't
+            been charged.
+          </Alert>
+        ) : refund ? (
+          <Alert
+            tone="info"
+            className="mt-6"
+            title="We've refunded your payment"
+            action={
+              <Button size="sm" href="/make-reservation">
+                Book again
+              </Button>
+            }
+          >
+            <p>{refund.message}</p>
+            <p className="mt-1">
+              We've emailed you the details. Refunds usually take 5 to 10
+              business days to appear on your statement.
+            </p>
+          </Alert>
         ) : (
           <div>
             <p className="max-w-2xl text-ink-600">
-              Your room is reserved. Pay now to confirm your booking.
+              {isMultiRoom
+                ? `Your ${roomsToPay.length} rooms are reserved. Pay for them together now to confirm your booking.`
+                : 'Your room is reserved. Pay now to confirm your booking.'}
             </p>
 
             <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
               <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start">
                 <StaySummary
                   heading="Booking summary"
-                  room={
-                    room ?? {
-                      name: ROOM_TYPES_NAMES[bookingDetails?.roomTypeId],
-                    }
-                  }
-                  checkIn={bookingDetails?.bookingDates.bookedFrom}
-                  checkOut={bookingDetails?.bookingDates.bookedUntil}
-                  nights={bookingDetails?.nightsCount}
-                  guests={bookingDetails?.guestCount}
-                  bookingId={bookingId || bookingDetails?.bookingId}
-                  price={{
-                    roomPrice: bookingDetails?.roomPrice,
-                    nights: bookingDetails?.nightsCount,
-                    discount: bookingDetails?.discount,
-                    discountAmount: bookingDetails?.discountAmount,
-                    tax: bookingDetails?.tax,
-                    total: bookingDetails?.totalPrice,
+                  {...staySummaryProps(roomsToPay, {
                     totalLabel: 'Total to pay (CAD)',
-                  }}
+                  })}
+                  bookingId={bookingId || bookingDetails?.bookingId}
                 />
               </aside>
               <div className="space-y-6 lg:col-start-1 lg:row-start-1">
@@ -313,7 +347,7 @@ const Booking = () => {
                       // one that isn't payable (the page redirects away instead)
                       reservationId={bookingDetails ? reservationId : null}
                       onPaymentSuccess={completeBooking} // Pass completeBooking as a callback
-                      amount={bookingDetails?.totalPrice}
+                      amount={amountToPay}
                     />
                   )}
                 </section>
